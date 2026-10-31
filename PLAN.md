@@ -1,4 +1,4 @@
-# VLEO Explorer — Project Plan
+# VLEO Trade Study Explorer — Project Plan
 
 An interactive web app for understanding the **mission trade space for a very low Earth
 orbit (VLEO) constellation**. Move a slider — altitude, spacecraft size, propulsion,
@@ -12,7 +12,7 @@ its assumptions, and a plain-language "why".
 - **Platform:** responsive web app — desktop, tablet, phone. Offline not required.
 - **Scope:** purely academic and vendor-neutral. Covers the VLEO band (~150–450 km) with
   comparison up to 600 km. Public, citable, textbook-level data only.
-- **Repo:** public, open source — `petersedivec/vleo-explorer`.
+- **Repo:** public, open source (MIT) — `petersedivec/vleo-explorer`.
 
 Status legend: ✅ decided · 🟡 proposed default (confirm) · ❓ open question
 
@@ -92,7 +92,7 @@ above the minimum elevation) — continuous coverage costs far more satellites.
 | Spacecraft | Bus dry mass or "size class" (CubeSat, 100 kg, 500 kg, large) | 5–1,500 kg |
 | | Frontal area, drag coefficient C_D | 0.01–5 m²; 2.0–2.6 (default 2.2) |
 | | Solar array area and orientation (edge-on vs sun-tracking) | adds drag area, sets power |
-| Propulsion | Technology class (cold gas, monoprop, electrospray, FEEP, gridded ion, Hall, RF plasma, air-breathing what-if) | sets Isp, thrust/power, efficiency |
+| Propulsion | Technology class (cold gas, monoprop, electrospray, FEEP, gridded ion, Hall, RF plasma; air-breathing what-if added in v2) | sets Isp, thrust/power, efficiency |
 | | Isp, max thrust, µN/W, efficiency η, total-impulse / operating-hour limit | editable after preset |
 | | Propellant mass | 0–50% of wet mass |
 | Environment | Solar activity (low / moderate / high) or launch year across the solar cycle | F10.7, Ap |
@@ -110,7 +110,8 @@ above the minimum elevation) — continuous coverage costs far more satellites.
 | Δv per year to hold altitude | (D/m) · seconds per year |
 | Power required | P = T · g₀ · Isp / (2η) |
 | Propellant flow and burn per year | ṁ = T / (g₀ Isp) |
-| **Mission life** | min(propellant life, thruster total-impulse life, design life) |
+| Mass over life | integrated in time steps: dm/dt = −ṁ; mass falls as propellant burns, so the ballistic coefficient drops and the spacecraft decays faster if thrust stops; Δv budget from the rocket equation Δv = g₀ Isp ln(m₀/m_f) |
+| **Mission life** | min(propellant life, thruster total-impulse life, design life), from the time-stepped mass history |
 | Minimum sustainable altitude | where max thrust (power-limited) = drag |
 | Descent from rideshare orbit | Δv ≈ v₂ − v₁ (low-thrust spiral); time ≈ Δv · m / T |
 | Disposal time | decay time from end-of-life altitude vs the 5-year rule |
@@ -133,7 +134,7 @@ above the minimum elevation) — continuous coverage costs far more satellites.
 | Replacement rate | N_sats / mission life (satellites per year) |
 | **Cost per year to sustain** | (unit cost + launch cost per sat) × replacement rate + ops + ground |
 | Up-front deployment cost | N_sats × (unit + launch) + ground |
-| Cost per unit of service | per km² imaged at the required GSD; per Gbps or per user-hour for comms |
+| **Cost per unit of service** (final economic output; no revenue model) | per km² imaged at the required GSD; per Gbps or per user-hour for comms |
 | Optimum altitude | minimum of cost-per-year curve that still meets the requirement |
 
 All cost parameters are editable, sourced where possible to public figures, and clearly
@@ -262,15 +263,14 @@ solar-activity scenarios; ADBSat-derived C_D values for presets; DAS/STK numbers
 | Oct 2026 | Constellation size, coverage and revisit are first-class trades |
 | Oct 2026 | Cost and replenishment model included, with editable labelled assumptions |
 | Oct 2026 | v1 missions: optical EO, SAR, direct-to-device comms (commercial focus; science deferred) |
+| Oct 2026 | Name: **VLEO Trade Study Explorer**; license: **MIT** |
+| Oct 2026 | Economics stop at cost per unit of service (no revenue / break-even model) |
+| Oct 2026 | v1 models mass change over life (propellant burn), so propellant-based options such as electrospray are compared fairly |
+| Oct 2026 | Air-breathing propulsion added after v1 (v2), as a clearly labelled what-if |
 
 ## 11. Open questions
 
-- ❓ License: 🟡 MIT (simplest) vs Apache-2.0 (patent grant).
-- ❓ Name: "VLEO Explorer" OK?
-- ❓ Revenue side: stop at cost per unit of service, or add simple revenue / break-even later?
-- ❓ Mass change over life (rocket equation) in v1, or constant mass first?
-- ❓ Air-breathing propulsion as a what-if in v1, or later?
-- ❓ Any instructor or course to pilot with?
+- None blocking. New questions get added here as they come up.
 
 ## 12. Guardrails for a public repo
 
