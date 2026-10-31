@@ -275,7 +275,10 @@ adds drag, which needs more thruster power. The loop gain is
 
   G = (½ ρ v² C_D k_array) · (g₀ Isp / (2η d)) · (1 / p_array)
 
-where p_array is delivered array power per unit area (W/m²). **If G ≥ 1 no design exists at
+where p_array is the thruster power one square metre of array can support:
+p_array = S η_cell F_pack L_d cos θ_avg / E, with E = 1/X_d + (f_e / ((1 − f_e) X_e) if the
+thruster also fires in eclipse). Mass feedback (array and PPU mass enlarge the body) adds a
+little more gain, so in practice designs stop closing slightly below G = 1. **If G ≥ 1 no design exists at
 that altitude.** Because ρ grows exponentially as h drops, G crosses 1 at a critical altitude
 — the hard left wall of the U-curve. Higher Isp raises G: high-Isp thrusters hit the floor at
 higher altitude unless arrays are edge-on (small k_array).
