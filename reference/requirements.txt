@@ -1,0 +1,5 @@
+# Pinned so generated atmosphere tables are reproducible.
+pymsis==0.13.0
+numpy==2.5.4
+scipy
+pytest
