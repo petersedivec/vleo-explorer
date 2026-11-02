@@ -276,7 +276,10 @@ vleo-explorer/
 | 0 | — | Plan; `docs/physics.md`; license | Equations, units, references written down |
 | 1 | — | Python reference (physics + atmosphere), atmosphere tables, validation tests, golden vectors | Matches GOCE / ISS / hand-calc checks |
 | 2 | — | Web skeleton, TS physics core, CI, Pages deploy | TS passes golden vectors; site live |
-| 3 | **v1** | Explore, altitude trade curves, explanation cards, solar bands, closed sizing loop, infeasible regions | Student can answer "why" for every number |
+| 3 | **v1.0** ✅ | Explore, altitude trade curves, explanation cards, solar bands, closed sizing loop, infeasible regions | Student can answer "why" for every number |
+| 3a | **v1.1** | Info pop-ups on every input (what it is, typical values, what it drives, design insight, reference; highlights affected results); tab layout: Explore / Propulsion trade / Heritage missions | Every input explained in place, on desktop and phone |
+| 3b | **v1.2** | As-built mode (fixed mass, area, power, thruster) alongside Design mode; heritage missions — GOCE, SLATS, CHAMP, SOAR, Starlink Feb 2022 storm batch, Albedo Clarity-1, ISS — each with sourced parameters (published vs estimated) and real outcome vs model | Each heritage mission loads and its outcome is compared with the model |
+| 3c | **v1.3** | Propulsion trade page (technical, no cost): tank mass per technology; optimal-Isp curve; "winner map" (altitude × life, size or power); life vs altitude per technology; comparison table | Shows which technology does the mission best where, on a fair basis |
 | 4 | **v1** | Three missions; analytic satellite counts; simple cost model; **U-curve**; tornado chart | Headline chart works for all three missions |
 | 5 | **v2** | Coverage simulator, 2D map, downlink, deployment, Monte Carlo | Analytic counts verified by simulation |
 | 6 | **v3** | Optimizer / Pareto; globe; interactive cause → effect graph; air-breathing what-if | Feature-complete |
@@ -317,6 +320,9 @@ No existing tool combines VLEO focus + propulsion/power/life coupling + constell
 | Oct 2026 | Solar activity: both exploration mode (low/moderate/high) and mission-life mode (launch year) |
 | Oct 2026 | Air-breathing what-if in v3 |
 | Oct 2026 | Charts: Plotly.js cartesian partial bundle, lazy-loaded |
+| Nov 2026 | v1.0 live on GitHub Pages; single-satellite depth (v1.1–v1.3) comes before missions and cost |
+| Nov 2026 | Heritage missions include commercial cases (Starlink storm batch, Albedo Clarity-1) alongside government and academic missions |
+| Nov 2026 | Propulsion comparison is purely technical. Default basis: equal total (wet) mass, compare capability (life, minimum altitude); alternative: equal mission requirement, compare total mass. "Equal propellant mass" shown only to explain why it misleads |
 
 ## 11. Open questions
 
@@ -326,5 +332,6 @@ No existing tool combines VLEO focus + propulsion/power/life coupling + constell
 
 - Public, citable data only (NASA, ESA, textbooks, published papers).
 - Propulsion presets are **generic technology classes**, not vendor products.
+- Heritage missions are historical public records (government, academic and commercial), each parameter cited and marked published or estimated.
 - No company-specific, proprietary or non-public information of any kind.
 - Cost figures are labelled teaching assumptions, not market data.
