@@ -94,6 +94,8 @@ header p {
   padding: 12px 16px 16px;
   position: sticky;
   top: 12px;
+  /* Sticky creates a stacking context; keep info pop-ups above the charts. */
+  z-index: 5;
   max-height: calc(100vh - 24px);
   overflow-y: auto;
 }
@@ -124,6 +126,7 @@ header p {
 
 .control-label {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
   font-size: 0.88rem;
@@ -315,4 +318,184 @@ footer {
   margin-top: 24px;
   font-size: 0.82rem;
   color: var(--muted);
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────────── */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 16px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tabs button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.coming-soon {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  max-width: 75ch;
+}
+
+.coming-soon h2 {
+  margin-top: 0;
+  font-size: 1.15rem;
+}
+
+.badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 2px 8px;
+  vertical-align: middle;
+}
+
+/* ── Input info pop-ups ───────────────────────────────────────────────── */
+
+.control {
+  position: relative;
+}
+
+.control-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.info {
+  position: static;
+  display: inline-flex;
+}
+
+.info-button,
+.info-inline {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid var(--muted);
+  background: transparent;
+  color: var(--muted);
+  font: italic 600 11px/1 Georgia, serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+  flex: none;
+}
+
+.info-inline {
+  cursor: default;
+  vertical-align: text-bottom;
+}
+
+.info-button:hover,
+.info-button[aria-expanded='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--surface);
+}
+
+/* Large tap target without changing the visual size. */
+.info-button::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
+
+.info-button {
+  position: relative;
+}
+
+.info-panel {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  display: grid;
+  gap: 4px;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  padding: 10px 12px;
+  font-size: 0.84rem;
+  font-style: normal;
+  line-height: 1.4;
+}
+
+.info-title {
+  font-size: 0.95rem;
+}
+
+.info-heading {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.info-list {
+  display: grid;
+  gap: 3px;
+}
+
+.info-list span::before {
+  content: '→ ';
+  color: var(--accent);
+}
+
+.info-reference {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.info-hint {
+  font-size: 0.75rem;
+  color: var(--accent);
+}
+
+.control.info-open {
+  z-index: 10;
+}
+
+.control.checkbox {
+  position: relative;
+}
+
+/* Highlight affected results while an input's info is open. */
+.groups.highlighting .card {
+  opacity: 0.45;
+  transition: opacity 0.15s;
+}
+
+.groups.highlighting .card.highlight {
+  opacity: 1;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
