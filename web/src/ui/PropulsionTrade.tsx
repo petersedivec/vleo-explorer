@@ -27,6 +27,7 @@ const TECH_COLOR: Record<PropulsionClass, string> = {
   feep: 'var(--tech-3)',
   griddedIon: 'var(--tech-4)',
   hall: 'var(--tech-5)',
+  hallKrypton: 'var(--tech-7)',
   rfPlasma: 'var(--tech-6)',
 }
 const SHORT: Record<PropulsionClass, string> = {
@@ -35,7 +36,8 @@ const SHORT: Record<PropulsionClass, string> = {
   electrospray: 'Electrospray',
   feep: 'FEEP',
   griddedIon: 'Gridded ion',
-  hall: 'Hall',
+  hall: 'Hall (Xe)',
+  hallKrypton: 'Hall (Kr)',
   rfPlasma: 'RF plasma',
 }
 

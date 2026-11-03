@@ -46,6 +46,8 @@ export function designFor(
     isp_s: override?.isp_s ?? preset.isp_s,
     efficiency: override?.efficiency ?? preset.efficiency ?? base.efficiency,
     thrusterFixedMass_kg: override || options.equalFixedMass ? NEUTRAL_FIXED_MASS_KG : preset.systemFixedMass_kg,
+    // The generic curve is technology-neutral: no minimum operating power.
+    minPowerOverride_W: override ? 0 : undefined,
     // Propellant does not affect sizing; it is added below.
     propellant_kg: 0,
   })
@@ -108,8 +110,8 @@ export function ispCurve(
 ): (RequirementResult & { isp_s: number })[] {
   return isps_s.map((isp_s) => ({
     isp_s,
-    // Any electric class with no minimum power will do: Isp, efficiency and fixed mass are all overridden
-    // with neutral values, so no technology's estimates leak into the generic curve.
+    // Any electric class will do: Isp, efficiency, fixed mass and minimum power are all overridden with
+    // neutral values, so no technology's estimates leak into the generic curve.
     ...meetRequirement(designFor(base, GENERIC_CLASS, altitude_m, { isp_s, efficiency }), isp_s, tankFraction, life_s),
   }))
 }

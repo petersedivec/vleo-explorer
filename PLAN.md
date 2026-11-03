@@ -325,6 +325,10 @@ No existing tool combines VLEO focus + propulsion/power/life coupling + constell
 | Nov 2026 | Heritage missions include commercial cases (Starlink storm batch, Albedo Clarity-1) alongside government and academic missions |
 | Nov 2026 | v1.4 adds payload growth with altitude, (h/300 km)^k, as the right wall of the mass-per-year curve until v2 requirement-based payload sizing |
 | Nov 2026 | Overview landing tab added (purpose, quick start, how tabs connect, assumptions, next steps). Tab order: Overview, Heritage missions, Explore, Propulsion trade, Constellation |
+| Nov 2026 | Propulsion estimates reviewed by the author: xenon tank 0.15, krypton tank 0.30 (new krypton Hall class), Hall fixed 2.5 kg, gridded ion fixed 1.5 kg; minimum power Hall 75 W, electrospray 2 W, gridded ion 40 W, RF 20 W. Independent literature check commissioned |
+| Nov 2026 | Extend the Python reference model to the sizing loop (and later constellation and trade) for independent validation and future reuse |
+| Nov 2026 | Add an orbit-type choice (dawn-dusk / noon SSO / other) that sets β automatically — not urgent |
+| Nov 2026 | Overview wording: "Explore VLEO and how propulsion technologies may support it"; cost model moved up the roadmap |
 | Nov 2026 | Not modelled for now, stated as assumptions: per-module thruster mass and wear life, battery mass; colour-blind patterns deferred |
 | Nov 2026 | ISS removed from heritage missions: too large, and relies on visiting vehicles for reboost rather than its own drag makeup |
 | Nov 2026 | Corrected presets to published thrust-to-power: electrospray η 0.35 (≈48 µN/W), RF plasma η 0.15 (≈38 µN/W); added per-technology tank fraction and fixed system mass (teaching estimates) |

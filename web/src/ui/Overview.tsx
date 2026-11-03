@@ -1,6 +1,8 @@
 // Landing page: purpose, a quick start, how the tabs connect, and reference material.
 
+import { PROPULSION_PRESETS, thrustToPower_N_W, type PropulsionClass } from '../model/propulsion'
 import { DEFAULT_INPUTS } from '../model/satellite'
+import { sig } from './format'
 
 export type TabId = 'overview' | 'heritage' | 'explore' | 'propulsion' | 'constellation'
 
@@ -62,7 +64,7 @@ const FLOW: { tab: TabId; title: string; text: string }[] = [
   },
   {
     tab: 'explore',
-    title: 'Explore: one satellite',
+    title: 'Explore: single satellite',
     text: 'Design a single satellite or load a real one. Altitude, solar activity, payload, arrays and propulsion set here are shared with the tabs that follow.',
   },
   {
@@ -103,7 +105,7 @@ const ASSUMPTIONS: { area: string; items: string[] }[] = [
     area: 'Propulsion comparison',
     items: [
       'Technologies are generic classes, not products. Isp and efficiency follow published ranges (e.g. Hall ≈ 66 µN/W, electrospray ≈ 48 µN/W).',
-      'Tank fractions, fixed system masses and minimum operating powers are order-of-magnitude teaching estimates. Ties within 10% are shown faded.',
+      'Tank fractions, fixed system masses and minimum operating powers are teaching estimates (table below). Ties within 10% are shown faded.',
       'Not modelled: mass per thruster module, thruster wear life, efficiency falling at low power.',
     ],
   },
@@ -126,12 +128,56 @@ const ASSUMPTIONS: { area: string; items: string[] }[] = [
 const NEXT_STEPS = [
   'Size payloads from real requirements: imaging resolution, radar sensitivity, direct-to-device link margin.',
   'Coverage simulator and 2D revisit map to check the analytic satellite counts; ground stations and downlink.',
+  'A cost model: satellites, launch, replacement and operations, giving cost per year and cost per unit of service.',
   'Time-varying solar cycle: pick a launch year and fly through the cycle.',
+  'Orbit-type choice (dawn-dusk or noon sun-synchronous, or other) that sets the sun angle and eclipse automatically.',
   'Uncertainty bands (Monte Carlo) on life, satellite count and mass.',
   'Battery mass, per-module thruster mass and wear life, low-power thruster efficiency.',
-  'A cost model, then an optimizer across altitude, satellite count and propulsion.',
+  'An optimizer across altitude, satellite count and propulsion.',
   'Air-breathing electric propulsion as a clearly labelled what-if.',
 ]
+
+const TECH_ORDER = Object.keys(PROPULSION_PRESETS) as PropulsionClass[]
+
+/** Propulsion teaching estimates, generated from the same presets the model uses. */
+function PropulsionAssumptions() {
+  return (
+    <div className="table-wrap">
+      <table className="params">
+        <caption>
+          Propulsion estimates for a ~50 kg spacecraft. Isp and efficiency follow published ranges; tank fraction, fixed
+          system mass and minimum power are teaching estimates reviewed by the project author (Nov 2026), with an
+          independent literature check in progress. Edit them in <code>web/src/model/propulsion.ts</code>.
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col">Technology</th>
+            <th scope="col">Isp</th>
+            <th scope="col" className="no-caps">µN/W</th>
+            <th scope="col">Tank (kg per kg propellant)</th>
+            <th scope="col">Fixed system mass</th>
+            <th scope="col">Minimum power</th>
+          </tr>
+        </thead>
+        <tbody>
+          {TECH_ORDER.map((t) => {
+            const p = PROPULSION_PRESETS[t]
+            return (
+              <tr key={t}>
+                <th scope="row">{p.label}</th>
+                <td>{sig(p.isp_s, 2)} s</td>
+                <td>{p.efficiency === null ? '—' : sig(thrustToPower_N_W(p.isp_s, p.efficiency) * 1e6, 2)}</td>
+                <td>{p.tankFraction}</td>
+                <td>{p.systemFixedMass_kg} kg</td>
+                <td>{p.efficiency === null ? '—' : `${p.minPower_W} W`}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
 export function Overview({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
   return (
@@ -139,7 +185,7 @@ export function Overview({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
       <section className="hero">
         <div className="hero-text">
           <p className="eyebrow">Very low Earth orbit, 150–450 km</p>
-          <h2>Explore VLEO and the propulsion technologies that make it work.</h2>
+          <h2>Explore VLEO and how propulsion technologies may support it.</h2>
           <p>
             Flying lower brings sharper imaging, stronger radio links for direct-to-device and broadband, faster
             revisit and orbits that clean themselves of debris. The price is drag — and staying up means thrust, power
@@ -218,7 +264,10 @@ export function Overview({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
           ))}
         </div>
 
-        <h4>What’s next</h4>
+        <h4>Propulsion assumptions</h4>
+        <PropulsionAssumptions />
+
+        <h4>What’s next to build into the app</h4>
         <ul>
           {NEXT_STEPS.map((n) => (
             <li key={n}>{n}</li>

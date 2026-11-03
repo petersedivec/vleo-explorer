@@ -20,7 +20,8 @@ describe('closed sizing loop', () => {
     const rs = sweepAltitude(DEFAULT_INPUTS, altitudes).filter((r) => r.feasible)
     for (let k = 1; k < rs.length; k++) {
       expect(rs[k].drag_N).toBeLessThan(rs[k - 1].drag_N)
-      expect(rs[k].thrusterPower_W).toBeLessThan(rs[k - 1].thrusterPower_W)
+      // Non-increasing: at high altitude the thruster sits at its minimum operating power.
+      expect(rs[k].thrusterPower_W).toBeLessThanOrEqual(rs[k - 1].thrusterPower_W)
       expect(rs[k].arrayArea_m2).toBeLessThanOrEqual(rs[k - 1].arrayArea_m2 * (1 + 1e-9))
     }
   })

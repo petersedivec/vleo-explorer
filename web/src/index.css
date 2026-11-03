@@ -22,6 +22,7 @@
   --tech-4: #2e9e5b;
   --tech-5: #e07b28;
   --tech-6: #1a9aa0;
+  --tech-7: #9c6b30;
   color-scheme: light;
 }
 
@@ -50,6 +51,7 @@
     --tech-4: #55c287;
     --tech-5: #f0a05d;
     --tech-6: #4cc4c9;
+    --tech-7: #d4a373;
     color-scheme: dark;
   }
 }
@@ -1043,4 +1045,16 @@ button.secondary {
 .assumptions li,
 .reference li {
   margin-bottom: 4px;
+}
+
+/* Let wide tables scroll inside their box instead of widening the page. */
+.overview > * {
+  min-width: 0;
+}
+
+.overview .params caption {
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0 0 6px;
 }

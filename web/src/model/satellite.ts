@@ -68,6 +68,8 @@ export interface SatelliteInputs {
   totalImpulse_Ns: number
   ppuSpecificMass_kg_W: number
   thrusterFixedMass_kg: number
+  /** Overrides the technology's minimum operating power (used for the generic Isp curve). */
+  minPowerOverride_W?: number
   /** If false, the thruster fires in daylight only (duty = 1 - eclipse fraction). */
   thrustInEclipse: boolean
   propellant_kg: number
@@ -331,7 +333,7 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
     stormDrag = drag_N(rho * inputs.stormMargin, v, inputs.cd, dragArea)
     const fireThrust = stormDrag / duty
     const newThrusterPower = electric
-      ? Math.max(electricPower_W(fireThrust, inputs.isp_s, inputs.efficiency), preset.minPower_W)
+      ? Math.max(electricPower_W(fireThrust, inputs.isp_s, inputs.efficiency), inputs.minPowerOverride_W ?? preset.minPower_W)
       : preset.fixedPower_W
 
     const loadDay = inputs.busPower_W + inputs.payloadPower_W + newThrusterPower

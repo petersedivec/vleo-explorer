@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { YEAR_S } from './constants'
 import { PROPULSION_PRESETS } from './propulsion'
-import { budgetLifeFor, designFor, ispCurve, requirementFor, TECHNOLOGIES, winnerMap } from './propulsionTrade'
+import { budgetLifeFor, designFor, ispCurve, NEUTRAL_FIXED_MASS_KG, requirementFor, TECHNOLOGIES, winnerMap } from './propulsionTrade'
 import { DEFAULT_INPUTS } from './satellite'
 
 const base = DEFAULT_INPUTS
@@ -50,10 +50,11 @@ describe('fairness checks', () => {
   })
 
   it('equal fixed masses give every technology the same fixed system mass', () => {
-    // Hall's estimated fixed mass is 3 kg; equalising to 2 kg removes 1 kg / (1 − structure fraction).
+    // Equalising removes (estimated − neutral) fixed mass, grossed up by the structure fraction.
     const equal = designFor(base, 'hall', 300e3, undefined, { equalFixedMass: true })
     const estimated = designFor(base, 'hall', 300e3)
-    expect(estimated.dryMass_kg - equal.dryMass_kg).toBeCloseTo(1 / (1 - base.structureFraction), 1)
+    const delta = (PROPULSION_PRESETS.hall.systemFixedMass_kg - NEUTRAL_FIXED_MASS_KG) / (1 - base.structureFraction)
+    expect(estimated.dryMass_kg - equal.dryMass_kg).toBeCloseTo(delta, 1)
   })
 
   it('a Hall thruster is never sized below its minimum operating power', () => {
@@ -62,6 +63,10 @@ describe('fairness checks', () => {
   })
 
   it('the generic Isp curve carries no technology-specific minimum power', () => {
-    expect(PROPULSION_PRESETS.electrospray.minPower_W).toBe(0)
+    // At 450 km drag is tiny, so any floor would dominate the thruster power.
+    const curve = ispCurve(base, 450e3, YEAR_S, [1500], 0.45, 0.12)
+    const d = designFor(base, 'electrospray', 450e3, { isp_s: 1500, efficiency: 0.45 })
+    expect(d.thrusterPower_W).toBeLessThan(PROPULSION_PRESETS.electrospray.minPower_W)
+    expect(curve[0].thrusterPower_W).toBeCloseTo(d.thrusterPower_W, 9)
   })
 })

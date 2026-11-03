@@ -9,6 +9,7 @@ export type PropulsionClass =
   | 'feep'
   | 'griddedIon'
   | 'hall'
+  | 'hallKrypton'
   | 'rfPlasma'
 
 export interface PropulsionPreset {
@@ -54,7 +55,7 @@ export const PROPULSION_PRESETS: Record<PropulsionClass, PropulsionPreset> = {
     label: 'Electrospray (ionic liquid)', isp_s: 1500, efficiency: 0.35, unitThrust_N: 0.1e-3, fixedPower_W: 0,
     tankFraction: 0.08, propellant: 'Ionic liquid (unpressurised)',
     systemFixedMass_kg: 0.5,
-    minPower_W: 0,
+    minPower_W: 2,
   },
   feep: {
     label: 'FEEP', isp_s: 4000, efficiency: 0.3, unitThrust_N: 0.35e-3, fixedPower_W: 0,
@@ -65,14 +66,20 @@ export const PROPULSION_PRESETS: Record<PropulsionClass, PropulsionPreset> = {
   griddedIon: {
     label: 'Gridded ion', isp_s: 2500, efficiency: 0.55, unitThrust_N: 5e-3, fixedPower_W: 0,
     tankFraction: 0.15, propellant: 'Xenon (high-pressure tank)',
-    systemFixedMass_kg: 4,
-    minPower_W: 50,
+    systemFixedMass_kg: 1.5,
+    minPower_W: 40,
   },
   hall: {
-    label: 'Hall effect', isp_s: 1400, efficiency: 0.45, unitThrust_N: 15e-3, fixedPower_W: 0,
-    tankFraction: 0.15, propellant: 'Xenon or krypton (high-pressure tank)',
-    systemFixedMass_kg: 3,
-    minPower_W: 100,
+    label: 'Hall effect (xenon)', isp_s: 1400, efficiency: 0.45, unitThrust_N: 15e-3, fixedPower_W: 0,
+    tankFraction: 0.15, propellant: 'Xenon (high-pressure tank)',
+    systemFixedMass_kg: 2.5,
+    minPower_W: 75,
+  },
+  hallKrypton: {
+    label: 'Hall effect (krypton)', isp_s: 1500, efficiency: 0.4, unitThrust_N: 15e-3, fixedPower_W: 0,
+    tankFraction: 0.3, propellant: 'Krypton (high-pressure tank; less dense than xenon)',
+    systemFixedMass_kg: 2.5,
+    minPower_W: 75,
   },
   rfPlasma: {
     label: 'RF / ambipolar plasma', isp_s: 800, efficiency: 0.15, unitThrust_N: 5e-3, fixedPower_W: 0,

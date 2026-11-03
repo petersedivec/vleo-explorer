@@ -249,20 +249,25 @@ technology per altitude (it does not depend on life); propellant is added per li
 Teaching defaults (editable in `web/src/model/propulsion.ts`; order-of-magnitude estimates, not vendor
 data):
 
-| Class | Tank fraction f_tank | Fixed system mass (kg) | Why |
-|---|---|---|---|
-| Cold gas | 0.6 | 0.5 | High-pressure gas needs heavy tanks |
-| Monopropellant | 0.15 | 1.5 | Blowdown tank, catalyst bed, valves |
-| Electrospray | 0.08 | 0.5 | Unpressurised ionic liquid; no feed system |
-| FEEP | 0.10 | 0.8 | Solid metal propellant, integrated reservoir |
-| Gridded ion | 0.15 | 4 | Xenon tank, regulator, neutraliser, PPU minimum |
-| Hall | 0.15 | 3 | Xenon/krypton tank, flow control, cathode |
-| RF plasma | 0.15 | 2 | Gas feed; no electrodes |
+| Class | Tank fraction f_tank | Fixed system mass (kg) | Minimum power (W) | Why |
+|---|---|---|---|---|
+| Cold gas | 0.6 | 0.5 | — | High-pressure gas needs heavy tanks |
+| Monopropellant | 0.15 | 1.5 | — | Blowdown tank, catalyst bed, valves |
+| Electrospray | 0.08 | 0.5 | 2 | Unpressurised ionic liquid; high-voltage supply floor |
+| FEEP | 0.10 | 0.8 | 5 | Solid metal propellant, integrated reservoir |
+| Gridded ion (xenon) | 0.15 | 1.5 | 40 | Xenon tank, regulator, neutraliser |
+| Hall (xenon) | 0.15 | 2.5 | 75 | Xenon tank, flow control, cathode |
+| Hall (krypton) | 0.30 | 2.5 | 75 | Krypton is less dense: bigger, heavier tank |
+| RF plasma | 0.15 | 2 | 20 | Gas feed; no electrodes |
+
+Krypton Hall Isp 1,500 s and η 0.40 (≈54 µN/W) are provisional. Tank fractions for xenon (0.15) and
+krypton (0.30), fixed masses for Hall (2.5 kg) and gridded ion (1.5 kg), and minimum powers for
+Hall (75 W), electrospray (2 W), gridded ion (40 W) and RF plasma (20 W) were set by the project author
+(Nov 2026); an independent literature check is in progress.
 
 Plus PPU mass α_ppu P for electric thrusters (§7).
 
-**Minimum operating power** (teaching estimates): Hall 100 W, gridded ion 50 W, RF plasma 20 W, FEEP 5 W,
-electrospray none (modular). Thruster power is max(required, minimum); the power system is sized for
+**Minimum operating power** (table above). Thruster power is max(required, minimum); the power system is sized for
 it and the thruster fires intermittently, so propellant use still follows drag.
 
 **Ties and sensitivity:** a winner within 10% of the runner-up's wet mass is shown as a tie (faded).
