@@ -162,7 +162,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
   efficiency: {
     title: 'Thruster efficiency η',
     what: 'Fraction of electrical input power that ends up as kinetic energy in the exhaust. Together with Isp it sets thrust per watt: T/P = 2η / (g₀·Isp).',
-    typical: '0.25 (small RF plasma) to 0.6 (gridded ion); Hall ~0.45; electrospray ~0.5–0.6.',
+    typical: '0.15 (small RF plasma) to 0.55 (gridded ion); Hall ~0.45; electrospray ~0.3–0.4 at 1,500 s. In thrust per watt: Hall ~60–65 µN/W, electrospray ~30–50 µN/W, electric propulsion generally under 75 µN/W.',
     drives: ['Thruster power, inversely', 'Array area, mass and drag through the power'],
     insight: 'Thrust per watt (µN/W, shown next to the slider) is derived, not chosen: you cannot have high Isp and high thrust per watt without high efficiency.',
     reference: 'Goebel & Katz, ch. 2',

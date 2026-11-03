@@ -9,15 +9,17 @@ import { Controls } from './ui/Controls'
 import { ExploreCharts } from './ui/ExploreCharts'
 import { duration, sig } from './ui/format'
 import { Heritage } from './ui/Heritage'
+import { PropulsionTrade } from './ui/PropulsionTrade'
 import { INPUT_INFO, type InfoKey } from './ui/inputInfo'
 import { decodeInputs, encodeInputs } from './ui/urlState'
 
-type Tab = 'explore' | 'propulsion' | 'heritage'
+type Tab = 'explore' | 'heritage' | 'propulsion' | 'constellation'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'explore', label: 'Explore' },
   { id: 'heritage', label: 'Heritage missions' },
   { id: 'propulsion', label: 'Propulsion trade' },
+  { id: 'constellation', label: 'Constellation' },
 ]
 
 const hashParams = () => new URLSearchParams(window.location.hash.replace(/^#/, ''))
@@ -159,17 +161,18 @@ export default function App() {
         />
       )}
       {tab === 'heritage' && <Heritage selectedId={missionId} onSelect={setMissionId} onLoad={loadMission} />}
-      {tab === 'propulsion' && (
-        <ComingSoon title="Propulsion trade" release="v1.3">
+      {tab === 'propulsion' && <PropulsionTrade inputs={inputs} set={set} onEditSpacecraft={() => setTab('explore')} />}
+      {tab === 'constellation' && (
+        <ComingSoon title="Constellation" release="v1.4">
           <p>
-            Which propulsion technology does the mission best, and where? Compared on a fair basis — equal total
-            spacecraft mass — this page will show:
+            From one satellite to many. Using the satellite you design in Explore and a coverage requirement, this page
+            will show:
           </p>
           <ul>
-            <li>The optimal-Isp curve: total propulsion-system mass vs specific impulse, with each technology as a point.</li>
-            <li>A winner map: the best technology across altitude and mission life, spacecraft size or available power.</li>
-            <li>Mission life vs altitude for every technology on the same spacecraft.</li>
-            <li>A side-by-side table at your chosen altitude.</li>
+            <li>Footprint and swath width vs altitude, from the sensor’s off-nadir angle or the user’s minimum elevation.</li>
+            <li>Satellites needed: roughly 1/h for imaging revisit, roughly 1/h² for continuous coverage.</li>
+            <li>Replacement rate: satellites needed ÷ mission life.</li>
+            <li>Mass to orbit per year to sustain the constellation — a technical stand-in for cost — and the optimum altitude.</li>
           </ul>
         </ComingSoon>
       )}

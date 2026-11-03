@@ -15,6 +15,13 @@
   --series-low: #2a7fd4;
   --series-mid: #7a5af5;
   --series-high: #d4572a;
+  --tech-0: #8c8c8c;
+  --tech-1: #d14343;
+  --tech-2: #2a7fd4;
+  --tech-3: #8a5cf5;
+  --tech-4: #2e9e5b;
+  --tech-5: #e07b28;
+  --tech-6: #1a9aa0;
   color-scheme: light;
 }
 
@@ -36,6 +43,13 @@
     --series-low: #5aa7f0;
     --series-mid: #a48bff;
     --series-high: #f08a5d;
+    --tech-0: #a3a3a3;
+    --tech-1: #f07a7a;
+    --tech-2: #5aa7f0;
+    --tech-3: #a98bff;
+    --tech-4: #55c287;
+    --tech-5: #f0a05d;
+    --tech-6: #4cc4c9;
     color-scheme: dark;
   }
 }
@@ -767,4 +781,62 @@ table.params td:last-child a {
 
 .sources li {
   margin-bottom: 4px;
+}
+
+/* ── Propulsion trade ─────────────────────────────────────────────────── */
+
+.summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.summary-card {
+  display: grid;
+  gap: 2px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.trade-table {
+  background: var(--surface);
+  margin-bottom: 16px;
+}
+
+.trade-table caption {
+  text-align: left;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 0 0 6px;
+}
+
+.trade-table th,
+.trade-table td {
+  white-space: nowrap;
+}
+
+.trade-table td.best {
+  font-weight: 700;
+  color: var(--down);
+}
+
+.swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  margin-right: 6px;
+  vertical-align: baseline;
+}
+
+.charts figure.callout p {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+table.params thead th.no-caps {
+  text-transform: none;
 }

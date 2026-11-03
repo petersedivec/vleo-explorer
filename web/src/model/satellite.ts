@@ -111,7 +111,7 @@ export const DEFAULT_INPUTS: SatelliteInputs = {
   efficiency: PROPULSION_PRESETS.electrospray.efficiency ?? 0.5,
   totalImpulse_Ns: Infinity,
   ppuSpecificMass_kg_W: 0.02,
-  thrusterFixedMass_kg: 2,
+  thrusterFixedMass_kg: PROPULSION_PRESETS.electrospray.systemFixedMass_kg,
   thrustInEclipse: true,
   propellant_kg: 8,
   designLife_s: 5 * YEAR_S,

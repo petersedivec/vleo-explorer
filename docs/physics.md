@@ -189,14 +189,16 @@ Thrust is not power-limited. Power = fixed heater/valve power P_fixed (teaching 
 |---|---|---|---|---|
 | Cold gas | 65 | — | 10 mN | Not power-limited |
 | Monopropellant (green) | 220 | — | 1 N | Not power-limited |
-| Electrospray (ionic liquid) | 1,500 | 0.55 | 0.1 mN per module | Modular |
+| Electrospray (ionic liquid) | 1,500 | 0.35 | 0.1 mN per module | Modular |
 | FEEP | 4,000 | 0.30 | 0.35 mN | Needs neutralizer |
 | Gridded ion | 2,500 | 0.55 | 5 mN | |
 | Hall effect | 1,400 | 0.45 | 15 mN | Highest thrust-to-power |
-| RF / ambipolar plasma | 800 | 0.25 | 5 mN | |
+| RF / ambipolar plasma | 800 | 0.15 | 5 mN | |
 
-Derived thrust-to-power at these defaults: Hall ≈ 66 µN/W; electrospray ≈ 75 µN/W at
-Isp 1,500 s; gridded ion ≈ 45 µN/W.
+Derived thrust-to-power at these defaults: Hall ≈ 66 µN/W; electrospray ≈ 48 µN/W;
+gridded ion ≈ 45 µN/W; RF plasma ≈ 38 µN/W; FEEP ≈ 15 µN/W. These match published ranges
+(electric propulsion generally below 75 µN/W; electrospray about 30–50 µN/W; Hall about
+60–65 µN/W). Efficiencies were chosen to reproduce these thrust-to-power figures at the preset Isp.
 
 ### 5.4 Drag makeup at constant altitude
 
@@ -219,6 +221,44 @@ dm/dt = −T / (g₀ Isp). Mass is time-stepped together with altitude. Mass mat
 t_life = min(t_prop, t_I, t_design), with t_design a design-life input (teaching default 5 yr).
 
 ---
+
+### 5.7 Propulsion trade [v1.3]
+
+A purely technical comparison of technologies on the same spacecraft (payload, bus, arrays, storm
+margin and solar activity from Explore). For each technology the closed sizing loop (§7) sizes thruster
+power, arrays and dry mass using that technology's preset Isp, efficiency and fixed system mass.
+Propellant is then added in one of two ways:
+
+- **Equal requirement** (hold altitude h for life L): m_p = D L / (g₀ Isp); tank = f_tank m_p;
+  **wet mass = m_dry + m_p (1 + f_tank)**. The lightest feasible technology wins.
+- **Equal total mass** (wet-mass budget M): m_p = (M − m_dry) / (1 + f_tank);
+  **life = m_p g₀ Isp / D**. The longest life wins.
+
+Comparing at equal *propellant* mass is misleading: it ignores that high Isp needs more power, larger
+arrays (more mass and drag) and different tankage.
+
+**Optimal-Isp curve:** a generic electric thruster with fixed efficiency η and tank fraction, swept over
+Isp. Low Isp → much propellant; high Isp → much power, array and drag. The minimum of wet mass vs Isp
+is the optimal Isp for the mission; it moves with altitude and life.
+
+**Winner map:** the equal-requirement winner over a grid of altitude × life. The loop is run once per
+technology per altitude (it does not depend on life); propellant is added per life.
+
+Teaching defaults (editable in `web/src/model/propulsion.ts`; order-of-magnitude estimates, not vendor
+data):
+
+| Class | Tank fraction f_tank | Fixed system mass (kg) | Why |
+|---|---|---|---|
+| Cold gas | 0.6 | 0.5 | High-pressure gas needs heavy tanks |
+| Monopropellant | 0.15 | 1.5 | Blowdown tank, catalyst bed, valves |
+| Electrospray | 0.08 | 0.5 | Unpressurised ionic liquid; no feed system |
+| FEEP | 0.10 | 0.8 | Solid metal propellant, integrated reservoir |
+| Gridded ion | 0.15 | 4 | Xenon tank, regulator, neutraliser, PPU minimum |
+| Hall | 0.15 | 3 | Xenon/krypton tank, flow control, cathode |
+| RF plasma | 0.15 | 2 | Gas feed; no electrodes |
+
+Plus PPU mass α_ppu P for electric thrusters (§7). Winners near the boundary between regions differ by
+little mass; the app shows the runner-up and the margin.
 
 ## 6. Eclipse and power [v1]
 

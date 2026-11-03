@@ -12,11 +12,12 @@ people new to VLEO. Purely academic and vendor-neutral.
 
 ## Status
 
-v1.2. Working now: single-satellite trade engine with a closed mass/power/drag sizing loop and an
+v1.3. Working now: single-satellite trade engine with a closed mass/power/drag sizing loop and an
 As-built mode; NRLMSIS 2.1 atmosphere across the solar cycle; mission life, no-thrust lifetime and
 disposal; altitude trade curves; an explanation for every input; and seven heritage missions (GOCE,
 SLATS, CHAMP, SOAR, the February 2022 Starlink batch, Albedo Clarity-1, ISS) with sourced parameters
-and model-vs-reality checks. Next: propulsion trade (v1.3) and constellation sizing (v1.4).
+and model-vs-reality checks; and a propulsion trade page (winner map, optimal-Isp curve, equal-mass
+comparison). Next: constellation sizing (v1.4).
 See [PLAN.md](PLAN.md).
 
 ## Repository

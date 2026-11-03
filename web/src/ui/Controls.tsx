@@ -280,7 +280,12 @@ export function Controls({ inputs, set, openInfo, setOpenInfo }: ControlsProps) 
           onChange={(e) => {
             const p = e.target.value as PropulsionClass
             const preset = PROPULSION_PRESETS[p]
-            set({ propulsion: p, isp_s: preset.isp_s, efficiency: preset.efficiency ?? inputs.efficiency })
+            set({
+              propulsion: p,
+              isp_s: preset.isp_s,
+              efficiency: preset.efficiency ?? inputs.efficiency,
+              thrusterFixedMass_kg: preset.systemFixedMass_kg,
+            })
           }}
         >
           {(Object.keys(PROPULSION_PRESETS) as PropulsionClass[]).map((p) => (
