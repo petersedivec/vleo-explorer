@@ -10,15 +10,17 @@ import { ExploreCharts } from './ui/ExploreCharts'
 import { duration, sig } from './ui/format'
 import { Constellation } from './ui/Constellation'
 import { Heritage } from './ui/Heritage'
+import { Overview, type TabId } from './ui/Overview'
 import { PropulsionTrade } from './ui/PropulsionTrade'
 import { INPUT_INFO, type InfoKey } from './ui/inputInfo'
 import { decodeInputs, encodeInputs } from './ui/urlState'
 
-type Tab = 'explore' | 'heritage' | 'propulsion' | 'constellation'
+type Tab = TabId
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'explore', label: 'Explore' },
+  { id: 'overview', label: 'Overview' },
   { id: 'heritage', label: 'Heritage missions' },
+  { id: 'explore', label: 'Explore' },
   { id: 'propulsion', label: 'Propulsion trade' },
   { id: 'constellation', label: 'Constellation' },
 ]
@@ -26,8 +28,11 @@ const TABS: { id: Tab; label: string }[] = [
 const hashParams = () => new URLSearchParams(window.location.hash.replace(/^#/, ''))
 
 function tabFromHash(): Tab {
-  const tab = hashParams().get('tab')
-  return TABS.some((t) => t.id === tab) ? (tab as Tab) : 'explore'
+  const params = hashParams()
+  const tab = params.get('tab')
+  if (TABS.some((t) => t.id === tab)) return tab as Tab
+  // Links made before the Overview existed carried settings without a tab: they meant Explore.
+  return params.has('v') ? 'explore' : 'overview'
 }
 
 function missionFromHash(): string | null {
@@ -126,9 +131,8 @@ export default function App() {
       <header>
         <h1>VLEO Trade Study Explorer</h1>
         <p>
-          How altitude, spacecraft design and propulsion trade against drag, power and mission life in very low
-          Earth orbit. Tap <span className="info-inline">i</span> beside any input to learn what it does; tap any
-          result for its equation.
+          Exploring very low Earth orbit and the propulsion technologies that enable it: how altitude, drag, power and
+          propellant trade against imaging, links and mission life.
         </p>
         <nav className="tabs" role="tablist" aria-label="Sections">
           {TABS.map((t) => (
@@ -146,6 +150,14 @@ export default function App() {
         </nav>
       </header>
 
+      {tab === 'overview' && (
+        <Overview
+          onNavigate={(t) => {
+            setTab(t)
+            window.scrollTo({ top: 0 })
+          }}
+        />
+      )}
       {tab === 'explore' && (
         <Explore
           inputs={inputs}

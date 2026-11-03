@@ -324,8 +324,9 @@ No existing tool combines VLEO focus + propulsion/power/life coupling + constell
 | Nov 2026 | v1.0 live on GitHub Pages; single-satellite depth (v1.1–v1.3) comes before missions and cost |
 | Nov 2026 | Heritage missions include commercial cases (Starlink storm batch, Albedo Clarity-1) alongside government and academic missions |
 | Nov 2026 | v1.4 adds payload growth with altitude, (h/300 km)^k, as the right wall of the mass-per-year curve until v2 requirement-based payload sizing |
+| Nov 2026 | Overview landing tab added (purpose, quick start, how tabs connect, assumptions, next steps). Tab order: Overview, Heritage missions, Explore, Propulsion trade, Constellation |
+| Nov 2026 | Not modelled for now, stated as assumptions: per-module thruster mass and wear life, battery mass; colour-blind patterns deferred |
 | Nov 2026 | ISS removed from heritage missions: too large, and relies on visiting vehicles for reboost rather than its own drag makeup |
-| Nov 2026 | Tab order: Explore, Heritage missions, Propulsion trade, Constellation |
 | Nov 2026 | Corrected presets to published thrust-to-power: electrospray η 0.35 (≈48 µN/W), RF plasma η 0.15 (≈38 µN/W); added per-technology tank fraction and fixed system mass (teaching estimates) |
 | Nov 2026 | v1.4 constellation tab added before missions and cost; uses mass to orbit per year as a technical proxy for cost |
 | Nov 2026 | Propulsion comparison is purely technical. Default basis: equal total (wet) mass, compare capability (life, minimum altitude); alternative: equal mission requirement, compare total mass. "Equal propellant mass" shown only to explain why it misleads |
