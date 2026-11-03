@@ -5,6 +5,8 @@ import type { SatelliteInputs, SatelliteResult } from '../model/satellite'
 import { sig } from './format'
 import { OUTPUT_GROUPS } from './outputs'
 
+const LOOP_FAILURES = new Set<string | null>(['loopDiverged', 'loopNotConverged', 'massGrowth'])
+
 interface CardsProps {
   inputs: SatelliteInputs
   result: SatelliteResult
@@ -35,7 +37,9 @@ export function Cards({ inputs, result, highlight }: CardsProps) {
                 <details key={card.id} className={`card${highlight.has(card.id) ? ' highlight' : ''}`}>
                   <summary>
                     <span className="card-label">{card.label}</span>
-                    <span className="card-value">{card.value(result, inputs)}</span>
+                    <span className="card-value">
+                      {card.sized && LOOP_FAILURES.has(result.infeasibility) ? '—' : card.value(result, inputs)}
+                    </span>
                     {showChange && (
                       <span className={`card-change ${change > 0 ? 'up' : 'down'}`} key={`${now}`}>
                         {change > 0 ? '▲' : '▼'} {sig(Math.abs(change) * 100, 2)}%

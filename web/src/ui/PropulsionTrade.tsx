@@ -10,7 +10,9 @@ import {
   ispCurve,
   lifeWithBudget,
   meetRequirement,
+  NEUTRAL_FIXED_MASS_KG,
   TECHNOLOGIES,
+  TIE_MARGIN,
   winnerMap,
 } from '../model/propulsionTrade'
 import type { SatelliteInputs } from '../model/satellite'
@@ -86,7 +88,9 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
   const [life_yr, setLife] = useState(3)
   const [budget_kg, setBudget] = useState(80)
   const [genericEta, setGenericEta] = useState(0.45)
-  const deferred = useDeferredValue({ inputs, life_yr, budget_kg, genericEta })
+  const [equalFixedMass, setEqualFixedMass] = useState(false)
+  const deferred = useDeferredValue({ inputs, life_yr, budget_kg, genericEta, equalFixedMass })
+  const options = useMemo(() => ({ equalFixedMass: deferred.equalFixedMass }), [deferred.equalFixedMass])
   const life_s = deferred.life_yr * YEAR_S
   const h = deferred.inputs.altitude_m
 
@@ -94,7 +98,7 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
     () =>
       TECHNOLOGIES.map((tech) => {
         const p = PROPULSION_PRESETS[tech]
-        const design = designFor(deferred.inputs, tech, h)
+        const design = designFor(deferred.inputs, tech, h, undefined, options)
         const req = meetRequirement(design, p.isp_s, p.tankFraction, life_s)
         return {
           tech,
@@ -104,10 +108,12 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
           budgetLife: lifeWithBudget(design, p.isp_s, p.tankFraction, deferred.budget_kg),
         }
       }),
-    [deferred.inputs, h, life_s, deferred.budget_kg],
+    [deferred.inputs, h, life_s, deferred.budget_kg, options],
   )
   const feasibleRows = rows.filter((r) => r.req.feasible)
-  const lightest = feasibleRows.reduce<(typeof rows)[number] | null>((a, b) => (!a || b.req.wet_kg < a.req.wet_kg ? b : a), null)
+  const ranked = [...feasibleRows].sort((a, b) => a.req.wet_kg - b.req.wet_kg)
+  const lightest = ranked[0] ?? null
+  const lightTie = ranked.length > 1 && (ranked[1].req.wet_kg - ranked[0].req.wet_kg) / ranked[0].req.wet_kg < TIE_MARGIN ? ranked[1] : null
   const longest = rows.reduce<(typeof rows)[number] | null>((a, b) => (!a || b.budgetLife > a.budgetLife ? b : a), null)
 
   const curve = useMemo(
@@ -118,16 +124,16 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
   const optimum = feasibleCurve.reduce<(typeof curve)[number] | null>((a, b) => (!a || b.wet_kg < a.wet_kg ? b : a), null)
 
   const map = useMemo(
-    () => winnerMap(deferred.inputs, MAP_ALTITUDES, MAP_LIVES_YR.map((y) => y * YEAR_S)),
-    [deferred.inputs],
+    () => winnerMap(deferred.inputs, MAP_ALTITUDES, MAP_LIVES_YR.map((y) => y * YEAR_S), options),
+    [deferred.inputs, options],
   )
   const lifeCurves = useMemo(
     () =>
       TECHNOLOGIES.map((tech) => ({
         tech,
-        lives: LIFE_ALTITUDES.map((alt) => budgetLifeFor(deferred.inputs, tech, alt, deferred.budget_kg)),
+        lives: LIFE_ALTITUDES.map((alt) => budgetLifeFor(deferred.inputs, tech, alt, deferred.budget_kg, options)),
       })),
-    [deferred.inputs, deferred.budget_kg],
+    [deferred.inputs, deferred.budget_kg, options],
   )
 
   const muted = cssColor('var(--muted)')
@@ -146,7 +152,7 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
       const where = `${MAP_ALTITUDES[j] / KM} km, ${sig(MAP_LIVES_YR[i], 2)} yr`
       if (!c.winner) return `${where}<br>No technology closes`
       const runner = c.runnerUp
-        ? `<br>Runner-up: ${SHORT[c.runnerUp]}`
+        ? `<br>Runner-up: ${SHORT[c.runnerUp]} (+${sig(c.margin * 100, 2)}%)${c.tie ? '<br><i>Effectively a tie</i>' : ''}`
         : ''
       return `${where}<br><b>${SHORT[c.winner]}</b>: ${sig(c.wet_kg, 3)} kg wet${runner}`
     }),
@@ -236,8 +242,18 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
           step={0.01}
           display={`${Math.round(genericEta * 100)}%`}
           onChange={setGenericEta}
-          hint="Tank fraction 0.12 for the generic curve."
+          hint={`Generic curve: tank fraction 0.12, fixed system mass ${NEUTRAL_FIXED_MASS_KG} kg.`}
         />
+
+        <h2>Check the assumptions</h2>
+        <label className="control checkbox">
+          <input type="checkbox" checked={equalFixedMass} onChange={(e) => setEqualFixedMass(e.target.checked)} />
+          Give every technology the same fixed system mass ({NEUTRAL_FIXED_MASS_KG} kg)
+        </label>
+        <p className="control-note">
+          Fixed masses, tank fractions and minimum powers are teaching estimates. Toggle this to see how much of each
+          win comes from them.
+        </p>
       </aside>
 
       <main>
@@ -255,7 +271,12 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
             <span className="card-value">
               {lightest ? `${PROPULSION_PRESETS[lightest.tech].label}` : 'No technology closes'}
             </span>
-            {lightest && <span className="muted small">{sig(lightest.req.wet_kg, 3)} kg wet</span>}
+            {lightest && (
+              <span className="muted small">
+                {sig(lightest.req.wet_kg, 3)} kg wet
+                {lightTie && ` — effectively tied with ${SHORT[lightTie.tech]} (${sig(lightTie.req.wet_kg, 3)} kg)`}
+              </span>
+            )}
           </div>
           <div className="summary-card">
             <span className="card-label">
@@ -327,7 +348,8 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
           <figure>
             <figcaption>
               <strong>Winner map: lightest technology for each mission.</strong> Hover for the wet mass and runner-up.
-              Blank: nothing closes. Boundaries are where two technologies tie — small changes in assumptions move them.
+              Faded cells: the runner-up is within {Math.round(TIE_MARGIN * 100)}% — effectively a tie, well inside the
+              uncertainty of the estimates. Blank: nothing closes.
             </figcaption>
             <Chart
               height={420}
@@ -343,6 +365,21 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
                   showscale: false,
                   text: mapText,
                   hoverinfo: 'text',
+                },
+                {
+                  // Fade cells where the runner-up is within the tie margin.
+                  type: 'heatmap',
+                  x: MAP_ALTITUDES.map((a) => a / KM),
+                  y: MAP_LIVES_YR,
+                  z: map.map((row) => row.map((c) => (c.winner && c.tie ? 1 : null))),
+                  zmin: 0,
+                  zmax: 1,
+                  colorscale: [
+                    [0, 'rgba(255,255,255,0.55)'],
+                    [1, 'rgba(255,255,255,0.55)'],
+                  ],
+                  showscale: false,
+                  hoverinfo: 'skip',
                 },
                 {
                   type: 'scatter',
@@ -444,8 +481,10 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
               needs: propellant, tank, thruster hardware, power system and the drag that comes with it.
             </p>
             <p className="muted small">
-              Tank fractions and fixed system masses are order-of-magnitude teaching estimates, not vendor data
-              (physics.md §5.7). Results near a boundary in the winner map are effectively ties.
+              Tank fractions, fixed system masses and minimum operating powers are order-of-magnitude teaching estimates,
+              not vendor data (physics.md §5.7). Not yet modelled: mass per thruster module, thruster wear life (total
+              impulse per unit), efficiency falling off at low power, and battery mass. Where the winner map is faded, or
+              changes when you equalise fixed masses, treat the result as a tie.
             </p>
           </figure>
         </div>

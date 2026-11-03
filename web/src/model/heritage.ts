@@ -44,7 +44,8 @@ export interface CheckResult {
   /** Model value at the low and high ends of the check's solar-activity range. */
   low: number
   high: number
-  verdict: 'within' | 'modelHigh' | 'modelLow' | null
+  /** 'consistent' when the observation is inside a wide band (high/low > 3): weak validation. */
+  verdict: 'within' | 'consistent' | 'modelHigh' | 'modelLow' | null
   /** Observed ÷ nearest model bound, when outside the range. */
   ratio: number | null
 }
@@ -57,7 +58,8 @@ export function evaluateCheck(mission: HeritageMission, check: Check): CheckResu
   const low = Math.min(...values)
   const high = Math.max(...values)
   if (check.observed === null) return { low, high, verdict: null, ratio: null }
-  if (check.observed >= low * 0.9 && check.observed <= high * 1.1) return { low, high, verdict: 'within', ratio: null }
+  if (check.observed >= low * 0.9 && check.observed <= high * 1.1)
+    return { low, high, verdict: high / low > 3 ? 'consistent' : 'within', ratio: null }
   return check.observed < low
     ? { low, high, verdict: 'modelHigh', ratio: low / check.observed }
     : { low, high, verdict: 'modelLow', ratio: check.observed / high }

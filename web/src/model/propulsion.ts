@@ -29,6 +29,11 @@ export interface PropulsionPreset {
    * minimum PPU. Teaching estimate (physics.md §5.7); the per-watt PPU mass is added separately.
    */
   systemFixedMass_kg: number
+  /**
+   * Lowest practical operating power (teaching estimate). Below it the thruster cannot run efficiently,
+   * so the power system is sized for at least this and the thruster fires intermittently.
+   */
+  minPower_W: number
 }
 
 /** Generic technology classes; teaching defaults from NASA SST ranges (§5.3). */
@@ -37,36 +42,43 @@ export const PROPULSION_PRESETS: Record<PropulsionClass, PropulsionPreset> = {
     label: 'Cold gas', isp_s: 65, efficiency: null, unitThrust_N: 10e-3, fixedPower_W: 10,
     tankFraction: 0.6, propellant: 'Nitrogen or butane (high-pressure tank)',
     systemFixedMass_kg: 0.5,
+    minPower_W: 0,
   },
   monoprop: {
     label: 'Monopropellant (green)', isp_s: 220, efficiency: null, unitThrust_N: 1, fixedPower_W: 20,
     tankFraction: 0.15, propellant: 'Green monopropellant (blowdown tank)',
     systemFixedMass_kg: 1.5,
+    minPower_W: 0,
   },
   electrospray: {
     label: 'Electrospray (ionic liquid)', isp_s: 1500, efficiency: 0.35, unitThrust_N: 0.1e-3, fixedPower_W: 0,
     tankFraction: 0.08, propellant: 'Ionic liquid (unpressurised)',
     systemFixedMass_kg: 0.5,
+    minPower_W: 0,
   },
   feep: {
     label: 'FEEP', isp_s: 4000, efficiency: 0.3, unitThrust_N: 0.35e-3, fixedPower_W: 0,
     tankFraction: 0.1, propellant: 'Liquid metal (indium), solid at launch',
     systemFixedMass_kg: 0.8,
+    minPower_W: 5,
   },
   griddedIon: {
     label: 'Gridded ion', isp_s: 2500, efficiency: 0.55, unitThrust_N: 5e-3, fixedPower_W: 0,
     tankFraction: 0.15, propellant: 'Xenon (high-pressure tank)',
     systemFixedMass_kg: 4,
+    minPower_W: 50,
   },
   hall: {
     label: 'Hall effect', isp_s: 1400, efficiency: 0.45, unitThrust_N: 15e-3, fixedPower_W: 0,
     tankFraction: 0.15, propellant: 'Xenon or krypton (high-pressure tank)',
     systemFixedMass_kg: 3,
+    minPower_W: 100,
   },
   rfPlasma: {
     label: 'RF / ambipolar plasma', isp_s: 800, efficiency: 0.15, unitThrust_N: 5e-3, fixedPower_W: 0,
     tankFraction: 0.15, propellant: 'Xenon, krypton or iodine',
     systemFixedMass_kg: 2,
+    minPower_W: 20,
   },
 }
 

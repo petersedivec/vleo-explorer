@@ -42,3 +42,26 @@ describe('propulsion trade', () => {
     for (const t of TECHNOLOGIES) expect(PROPULSION_PRESETS[t].tankFraction).toBeGreaterThan(0)
   })
 })
+
+describe('fairness checks', () => {
+  it('marks a tie when the runner-up is within 10%', () => {
+    for (const row of winnerMap(base, [300e3, 400e3], [1 * YEAR_S, 5 * YEAR_S]))
+      for (const c of row) expect(c.tie).toBe(c.margin < 0.1)
+  })
+
+  it('equal fixed masses give every technology the same fixed system mass', () => {
+    // Hall's estimated fixed mass is 3 kg; equalising to 2 kg removes 1 kg / (1 − structure fraction).
+    const equal = designFor(base, 'hall', 300e3, undefined, { equalFixedMass: true })
+    const estimated = designFor(base, 'hall', 300e3)
+    expect(estimated.dryMass_kg - equal.dryMass_kg).toBeCloseTo(1 / (1 - base.structureFraction), 1)
+  })
+
+  it('a Hall thruster is never sized below its minimum operating power', () => {
+    const d = designFor(base, 'hall', 450e3)
+    expect(d.thrusterPower_W).toBeGreaterThanOrEqual(PROPULSION_PRESETS.hall.minPower_W)
+  })
+
+  it('the generic Isp curve carries no technology-specific minimum power', () => {
+    expect(PROPULSION_PRESETS.electrospray.minPower_W).toBe(0)
+  })
+})

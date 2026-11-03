@@ -117,12 +117,14 @@ export const DEFAULT_INPUTS: SatelliteInputs = {
   designLife_s: 5 * YEAR_S,
 }
 
-export type Infeasibility = 'loopDiverged' | 'loopNotConverged' | 'thrustBelowDrag' | null
+export type Infeasibility = 'loopDiverged' | 'massGrowth' | 'loopNotConverged' | 'thrustBelowDrag' | null
 
 export interface SatelliteResult {
   feasible: boolean
   infeasibility: Infeasibility
   iterations: number
+  /** Dry mass ÷ the same spacecraft's dry mass with no drag to fight (Design mode). */
+  massGrowth: number
 
   speed_m_s: number
   period_s: number
@@ -190,10 +192,15 @@ function decayIntegral(inputs: Pick<SatelliteInputs, 'atmosphereModel' | 'solar'
   return table
 }
 
-const MAX_ITERATIONS = 200
-const TOLERANCE = 1e-6
-const DAMPING = 0.5
-const MAX_DRY_MASS_KG = 1e5
+const MAX_ITERATIONS = 20_000
+const TOLERANCE = 1e-7
+const MAX_DRY_MASS_KG = 1e6
+/**
+ * A design "closes" only if its dry mass stays within this multiple of the same spacecraft with no
+ * drag to fight (physics.md §7). Beyond it the loop may converge mathematically, but only to an
+ * absurdly large spacecraft.
+ */
+export const MASS_GROWTH_LIMIT = 10
 
 export function evaluateSatellite(inputs: SatelliteInputs): SatelliteResult {
   return inputs.mode === 'asBuilt' ? evaluateAsBuilt(inputs) : evaluateDesign(inputs)
@@ -257,6 +264,7 @@ function evaluateAsBuilt(inputs: SatelliteInputs): SatelliteResult {
     feasible: holds,
     infeasibility: holds ? null : 'thrustBelowDrag',
     iterations: 0,
+    massGrowth: NaN,
     eclipseFraction: fe,
     duty,
     bodyFrontalArea_m2: dragArea_m2,
@@ -297,9 +305,22 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
       inputs.payloadFrontalArea_m2,
     )
 
-  let dryMass = (inputs.payloadMass_kg + inputs.busFixedMass_kg) / (1 - inputs.structureFraction)
+  // Drag-free reference: the same spacecraft sized for bus and payload power only.
+  const baseLoad = inputs.busPower_W + inputs.payloadPower_W
+  const baseArrayArea = ((baseLoad * fe) / ((1 - fe) * X_ECLIPSE) + baseLoad / X_DAYLIGHT) / arrayPowerPerArea
+  const dragFreeDryMass =
+    (inputs.payloadMass_kg +
+      inputs.busFixedMass_kg +
+      inputs.arrayArealMass_kg_m2 * baseArrayArea +
+      inputs.thrusterFixedMass_kg) /
+    (1 - inputs.structureFraction)
+
+  // The update is monotone (more mass → more area → more drag → more power → more mass), so plain
+  // fixed-point iteration from the drag-free design rises steadily to the solution when one exists,
+  // converging at a rate set by the effective loop gain.
+  let dryMass = dragFreeDryMass
   let thrusterPower = 0
-  let arrayArea = 0
+  let arrayArea = baseArrayArea
   let stormDrag = 0
   let iterations = 0
   let converged = false
@@ -310,7 +331,7 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
     stormDrag = drag_N(rho * inputs.stormMargin, v, inputs.cd, dragArea)
     const fireThrust = stormDrag / duty
     const newThrusterPower = electric
-      ? electricPower_W(fireThrust, inputs.isp_s, inputs.efficiency)
+      ? Math.max(electricPower_W(fireThrust, inputs.isp_s, inputs.efficiency), preset.minPower_W)
       : preset.fixedPower_W
 
     const loadDay = inputs.busPower_W + inputs.payloadPower_W + newThrusterPower
@@ -333,8 +354,8 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
       break
     }
     const change = Math.abs(newDryMass - dryMass) / dryMass + Math.abs(newArrayArea - arrayArea) / Math.max(newArrayArea, 1e-9)
-    dryMass += DAMPING * (newDryMass - dryMass)
-    arrayArea += DAMPING * (newArrayArea - arrayArea)
+    dryMass = newDryMass
+    arrayArea = newArrayArea
     thrusterPower = newThrusterPower
     if (change < TOLERANCE) {
       converged = true
@@ -345,12 +366,21 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
   const bodyFrontal = bodyArea(dryMass)
   const common = lifeAndEnvironment(inputs, dryMass, bodyFrontal + kArray * arrayArea)
   const sizedThrust = stormDrag / duty
-  const feasible = converged && !diverged
+  const tooHeavy = converged && dryMass > MASS_GROWTH_LIMIT * dragFreeDryMass
+  const feasible = converged && !diverged && !tooHeavy
+  const infeasibility: Infeasibility = diverged
+    ? 'loopDiverged'
+    : !converged
+      ? 'loopNotConverged'
+      : tooHeavy
+        ? 'massGrowth'
+        : null
 
   return {
     ...common,
     feasible,
-    infeasibility: diverged ? 'loopDiverged' : converged ? null : 'loopNotConverged',
+    infeasibility,
+    massGrowth: dryMass / dragFreeDryMass,
     iterations,
     eclipseFraction: fe,
     duty,

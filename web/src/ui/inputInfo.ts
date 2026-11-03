@@ -102,7 +102,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
   },
   stormMargin: {
     title: 'Storm margin on density',
-    what: 'Geomagnetic storms can raise upper-atmosphere density several-fold within hours. The thruster and power system are sized to cope with density this many times the nominal value.',
+    what: 'Geomagnetic storms heat and expand the upper atmosphere within hours. The relative rise grows with altitude: tens of percent near 200 km, up to several-fold at 400 km and above. The thruster and power system are sized to cope with density this many times the nominal value.',
     typical: '×2–5. In February 2022 a storm raised drag on a batch of newly launched Starlink satellites at about 210 km; 38 of 49 reentered.',
     drives: [
       'Thruster size and power, array area and mass (sized for the storm)',
@@ -133,7 +133,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     typical: '2.2 for compact bodies; 2.4–2.6 for flat plates and long bodies. Panel-method tools such as ADBSat compute it from the geometry.',
     drives: ['Drag, linearly', 'Ballistic coefficient and natural lifetime, inversely'],
     insight: 'Low-drag shapes and surface coatings that reflect molecules more specularly are active VLEO research — a few percent of C_D is a few percent of propellant.',
-    reference: 'Mostaza-Prieto et al. (ADBSat), Computer Physics Communications, 2022',
+    reference: 'Sinpetru et al. (ADBSat), Computer Physics Communications, 2022',
     affects: ['drag', 'ballistic', 'thrusterPower', 'propPerYear', 'missionLife', 'naturalLifetime', 'loopGain', 'decayRate', 'thrustMargin'],
   },
   arrays: {
@@ -141,7 +141,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     what: 'Edge-on arrays lie parallel to the airflow (like GOCE’s fixed wings). Sun-tracking arrays rotate to face the Sun, so they swing broadside to the airflow for part of each orbit.',
     typical: 'Edge-on: drag factor ≈ 0.07 of array area, but less power per m². Sun-tracking: ≈ 0.71 of array area, full power.',
     drives: ['Drag area', 'Array size needed for the same power', 'Whether any design closes at low altitude'],
-    insight: 'The single biggest design lever in VLEO. Sun-tracking arrays generate more power per m² but create so much drag that below about 200 km the extra power cannot pay for the drag it causes.',
+    insight: 'The single biggest design lever in VLEO. Sun-tracking arrays generate more power per m² but create so much drag that at low altitude the extra power cannot pay for the drag it causes. With the default spacecraft and storm margin, sun-tracking designs stop closing around 275 km, edge-on designs around 205 km.',
     reference: 'Free-molecular flat-plate theory; SMAD ch. 21',
     affects: ['dragArea', 'arrayArea', 'drag', 'thrusterPower', 'loopGain', 'missionLife', 'ballistic'],
   },
@@ -196,7 +196,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     what: 'If on, batteries power the thruster in Earth’s shadow so it can fire all orbit. If off, it fires only in sunlight and must push harder to cancel the same average drag.',
     typical: 'Most drag-makeup designs thrust continuously; some small satellites fire only in sunlight to save battery mass.',
     drives: ['Thrust needed while firing', 'Array size (eclipse energy must be stored)'],
-    insight: 'Sunlight-only thrusting needs a bigger thruster but smaller batteries. With long eclipses at low altitude, the trade shifts.',
+    insight: 'Sunlight-only thrusting needs a bigger thruster, but the arrays no longer have to store energy for thrusting in eclipse. With long eclipses at low altitude, the trade shifts. (Battery mass is not yet modelled.)',
     affects: ['thrusterPower', 'thrusterUnits', 'arrayArea', 'dryMass', 'loopGain'],
   },
   mode: {
@@ -277,7 +277,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     what: 'Continuous coverage is required from the equator up to this latitude, north and south.',
     typical: '±53–60° covers most of the world’s population; ±90° is truly global.',
     drives: ['Area to cover (proportional to the sine of the latitude)', 'Satellites needed'],
-    insight: 'Skipping the poles saves satellites; inclination must be at least this latitude.',
+    insight: 'Skipping the poles saves satellites. Inclination should be close to this latitude: each footprint reaches a few degrees beyond the ground track.',
     affects: [],
   },
   payloadExponent: {

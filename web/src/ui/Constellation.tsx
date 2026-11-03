@@ -172,8 +172,8 @@ export function Constellation({ inputs, set, onEditSpacecraft }: Props) {
         </div>
         <p className="control-note">
           Satellite from Explore ({inputs.mode === 'design' ? 'designed' : 'as built'}): inclination {inputs.inclination_deg}°,
-          payload {sig(inputs.payloadMass_kg, 2)} kg at 300 km, propellant {sig(inputs.propellant_kg, 2)} kg, design life{' '}
-          {sig(inputs.designLife_s / 31_557_600, 2)} yr.{' '}
+          payload {sig(inputs.payloadMass_kg, 2)} kg at 300 km, design life {sig(inputs.designLife_s / 31_557_600, 2)} yr
+          {inputs.mode === 'design' ? ' (propellant sized to last it at each altitude)' : `, propellant ${sig(inputs.propellant_kg, 2)} kg`}.{' '}
           <button type="button" className="link" onClick={onEditSpacecraft}>
             Edit in Explore
           </button>
@@ -199,10 +199,11 @@ export function Constellation({ inputs, set, onEditSpacecraft }: Props) {
           <div className="summary-card">
             <span className="card-label">Each satellite</span>
             <span className="card-value">
-              {here.satellite.feasible ? `${sig(here.satellite.wetMass_kg, 3)} kg, ${duration(here.life_s)}` : 'No design closes'}
+              {here.feasible ? `${sig(here.wetMass_kg, 3)} kg, ${duration(here.life_s)}` : 'No design closes'}
             </span>
             <span className="muted small">
               Payload ×{sig(here.payloadScale, 2)} of the 300 km payload
+              {inputs.mode === 'design' && here.feasible && `; ${sig(here.propellant_kg, 2)} kg propellant for its life`}
             </span>
           </div>
           <div className="summary-card">
@@ -312,13 +313,14 @@ export function Constellation({ inputs, set, onEditSpacecraft }: Props) {
           <figure>
             <figcaption>
               <strong>Satellite wet mass vs altitude.</strong> Payload grows as (h / 300 km)^{c.payloadExponent.toFixed(1)} to
-              keep the same ground performance; at low altitude the arrays and thruster power sized to fight drag add mass.
+              keep the same ground performance. At low altitude the arrays, thruster power and propellant needed to fight drag
+              for the whole design life add mass.
             </figcaption>
             <Chart
               data={[
                 {
                   x: ALT_KM,
-                  y: current.map((p) => (p.satellite.feasible ? p.satellite.wetMass_kg : null)),
+                  y: current.map((p) => (p.feasible ? p.wetMass_kg : null)),
                   name: 'Wet mass',
                   mode: 'lines',
                   line: { color: cssColor('var(--accent)'), width: 2 },
@@ -329,9 +331,12 @@ export function Constellation({ inputs, set, onEditSpacecraft }: Props) {
           </figure>
         </div>
         <p className="muted small">
-          Analytic estimates (physics.md §10): revisit from swath and orbits per revisit window at the equator;
-          continuous coverage from hexagonal packing of footprints. Version 2 adds a coverage simulator to check them.
-          Mass to orbit per year is a steady-state replacement view and excludes launch-vehicle and dispenser mass.
+          Analytic estimates (physics.md §10). Revisit uses the sensor’s field of regard (how far it can point, not the
+          instantaneous swath) and assumes passes evenly spread in longitude; 1 usable pass per orbit suits daylight-only
+          optical imaging in sun-synchronous orbit. Continuous coverage uses ideal hexagonal packing of footprints — a
+          lower bound; real Walker or streets-of-coverage designs need somewhat more. Version 2 adds a coverage
+          simulator to check both. Mass to orbit per year is a steady-state replacement view and excludes launch-vehicle
+          and dispenser mass.
         </p>
       </main>
     </div>

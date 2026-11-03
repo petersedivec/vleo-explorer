@@ -30,6 +30,8 @@ function CheckRow({ mission, check }: { mission: HeritageMission; check: Check }
   const verdict =
     r.verdict === 'within'
       ? { cls: 'ok', text: 'Within model range' }
+      : r.verdict === 'consistent'
+        ? { cls: 'warn', text: `Consistent, but the band spans ×${sig(r.high / r.low, 2)}` }
       : r.verdict === 'modelHigh'
         ? { cls: 'off', text: `Model high by ×${sig(r.ratio!, 2)}` }
         : r.verdict === 'modelLow'

@@ -25,10 +25,13 @@ describe('closed sizing loop', () => {
     }
   })
 
-  it('a large loop gain means the design does not close', () => {
-    for (const r of sweepAltitude({ ...DEFAULT_INPUTS, arrayOrientation: 'sunTracking' }, altitudes)) {
-      if (r.loopGain > 1.05) expect(r.feasible).toBe(false)
-      if (r.loopGain < 0.8) expect(r.feasible).toBe(true)
+  it('the feasibility wall sits where the loop gain approaches 1, not at an iteration cap', () => {
+    for (const orientation of ['edgeOn', 'sunTracking'] as const) {
+      for (const r of sweepAltitude({ ...DEFAULT_INPUTS, arrayOrientation: orientation }, altitudes)) {
+        if (r.loopGain > 1.05) expect(r.feasible).toBe(false)
+        if (r.loopGain < 0.85) expect(r.feasible).toBe(true)
+        expect(r.infeasibility).not.toBe('loopNotConverged')
+      }
     }
   })
 

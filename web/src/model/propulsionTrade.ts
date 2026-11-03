@@ -11,13 +11,32 @@ import { evaluateSatellite, type SatelliteInputs, type SatelliteResult } from '.
 
 export const TECHNOLOGIES = Object.keys(PROPULSION_PRESETS) as PropulsionClass[]
 
+/** Neutral fixed system mass used for the generic Isp curve and the "equal fixed masses" check. */
+export const NEUTRAL_FIXED_MASS_KG = 2
+
+const GENERIC_CLASS: PropulsionClass = 'electrospray'
+
+/** A winner within this fraction of the runner-up's wet mass is shown as a tie. */
+export const TIE_MARGIN = 0.1
+
+export interface TradeOptions {
+  /** Give every technology the same fixed system mass, to see how much the estimates drive the result. */
+  equalFixedMass?: boolean
+}
+
 export interface TechDesign {
   tech: PropulsionClass
   design: SatelliteResult
 }
 
 /** Size the spacecraft for one technology at one altitude, using that technology's preset Isp and efficiency. */
-export function designFor(base: SatelliteInputs, tech: PropulsionClass, altitude_m: number, override?: { isp_s: number; efficiency: number }): SatelliteResult {
+export function designFor(
+  base: SatelliteInputs,
+  tech: PropulsionClass,
+  altitude_m: number,
+  override?: { isp_s: number; efficiency: number },
+  options: TradeOptions = {},
+): SatelliteResult {
   const preset = PROPULSION_PRESETS[tech]
   return evaluateSatellite({
     ...base,
@@ -26,7 +45,7 @@ export function designFor(base: SatelliteInputs, tech: PropulsionClass, altitude
     propulsion: tech,
     isp_s: override?.isp_s ?? preset.isp_s,
     efficiency: override?.efficiency ?? preset.efficiency ?? base.efficiency,
-    thrusterFixedMass_kg: preset.systemFixedMass_kg,
+    thrusterFixedMass_kg: override || options.equalFixedMass ? NEUTRAL_FIXED_MASS_KG : preset.systemFixedMass_kg,
     // Propellant does not affect sizing; it is added below.
     propellant_kg: 0,
   })
@@ -65,14 +84,14 @@ export function lifeWithBudget(design: SatelliteResult, isp_s: number, tankFract
   return (propellant * G0 * isp_s) / design.drag_N
 }
 
-export function requirementFor(base: SatelliteInputs, tech: PropulsionClass, altitude_m: number, life_s: number) {
+export function requirementFor(base: SatelliteInputs, tech: PropulsionClass, altitude_m: number, life_s: number, options: TradeOptions = {}) {
   const preset = PROPULSION_PRESETS[tech]
-  return meetRequirement(designFor(base, tech, altitude_m), preset.isp_s, preset.tankFraction, life_s)
+  return meetRequirement(designFor(base, tech, altitude_m, undefined, options), preset.isp_s, preset.tankFraction, life_s)
 }
 
-export function budgetLifeFor(base: SatelliteInputs, tech: PropulsionClass, altitude_m: number, wetBudget_kg: number) {
+export function budgetLifeFor(base: SatelliteInputs, tech: PropulsionClass, altitude_m: number, wetBudget_kg: number, options: TradeOptions = {}) {
   const preset = PROPULSION_PRESETS[tech]
-  return lifeWithBudget(designFor(base, tech, altitude_m), preset.isp_s, preset.tankFraction, wetBudget_kg)
+  return lifeWithBudget(designFor(base, tech, altitude_m, undefined, options), preset.isp_s, preset.tankFraction, wetBudget_kg)
 }
 
 /**
@@ -89,7 +108,9 @@ export function ispCurve(
 ): (RequirementResult & { isp_s: number })[] {
   return isps_s.map((isp_s) => ({
     isp_s,
-    ...meetRequirement(designFor(base, 'griddedIon', altitude_m, { isp_s, efficiency }), isp_s, tankFraction, life_s),
+    // Any electric class with no minimum power will do: Isp, efficiency and fixed mass are all overridden
+    // with neutral values, so no technology's estimates leak into the generic curve.
+    ...meetRequirement(designFor(base, GENERIC_CLASS, altitude_m, { isp_s, efficiency }), isp_s, tankFraction, life_s),
   }))
 }
 
@@ -97,24 +118,40 @@ export interface WinnerCell {
   winner: PropulsionClass | null
   wet_kg: number
   runnerUp: PropulsionClass | null
+  /** (runner-up wet mass − winner wet mass) ÷ winner wet mass; Infinity if there is no runner-up. */
+  margin: number
+  tie: boolean
 }
 
 /**
  * Lightest technology meeting each (altitude, life) requirement. The sizing loop does not depend on
  * life, so each technology is sized once per altitude and propellant is added per life.
  */
-export function winnerMap(base: SatelliteInputs, altitudes_m: number[], lives_s: number[], techs = TECHNOLOGIES): WinnerCell[][] {
-  const designs = altitudes_m.map((h) => techs.map((t) => designFor(base, t, h)))
+export function winnerMap(
+  base: SatelliteInputs,
+  altitudes_m: number[],
+  lives_s: number[],
+  options: TradeOptions = {},
+  techs = TECHNOLOGIES,
+): WinnerCell[][] {
+  const designs = altitudes_m.map((h) => techs.map((t) => designFor(base, t, h, undefined, options)))
   return lives_s.map((life) =>
     altitudes_m.map((_, a) => {
-      const options = techs
+      const candidates = techs
         .map((tech, k) => {
           const p = PROPULSION_PRESETS[tech]
           return { tech, r: meetRequirement(designs[a][k], p.isp_s, p.tankFraction, life) }
         })
         .filter((o) => o.r.feasible)
         .sort((x, y) => x.r.wet_kg - y.r.wet_kg)
-      return { winner: options[0]?.tech ?? null, wet_kg: options[0]?.r.wet_kg ?? NaN, runnerUp: options[1]?.tech ?? null }
+      const margin = candidates[1] ? (candidates[1].r.wet_kg - candidates[0].r.wet_kg) / candidates[0].r.wet_kg : Infinity
+      return {
+        winner: candidates[0]?.tech ?? null,
+        wet_kg: candidates[0]?.r.wet_kg ?? NaN,
+        runnerUp: candidates[1]?.tech ?? null,
+        margin,
+        tie: margin < TIE_MARGIN,
+      }
     }),
   )
 }

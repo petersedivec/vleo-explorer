@@ -74,11 +74,18 @@ function Explore({ inputs, set, loaded, onShowMission }: ExploreProps) {
             {sig(result.decayRate_m_day / 1e3, 2)} km per day now.
           </div>
         )}
-        {!result.feasible && result.infeasibility !== 'thrustBelowDrag' && (
+        {!result.feasible && result.infeasibility === 'massGrowth' && (
+          <div className="banner" role="alert">
+            <strong>Impractical at {inputs.altitude_m / KM} km.</strong> A design technically closes, but only at about ×
+            {sig(result.massGrowth, 2)} the mass of the same spacecraft with no drag to fight (limit ×10). Try edge-on
+            arrays, lower Isp, a smaller storm margin or a higher orbit.
+          </div>
+        )}
+        {!result.feasible && (result.infeasibility === 'loopDiverged' || result.infeasibility === 'loopNotConverged') && (
           <div className="banner" role="alert">
             <strong>No design closes at {inputs.altitude_m / KM} km.</strong> Drag from the arrays needed to power the
-            thruster grows faster than the thrust they provide (sizing-loop gain {sig(result.loopGain, 2)}). Try
-            edge-on arrays, lower Isp, a smaller storm margin or a higher orbit.
+            thruster grows faster than the thrust they provide (sizing-loop gain {sig(result.loopGain, 2)}, plus mass
+            feedback). Try edge-on arrays, lower Isp, a smaller storm margin or a higher orbit.
           </div>
         )}
         <Cards inputs={inputs} result={result} highlight={highlight} />

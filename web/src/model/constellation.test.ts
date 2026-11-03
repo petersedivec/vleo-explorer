@@ -70,11 +70,20 @@ describe('sustainment', () => {
   it('replacement rate is satellites over life', () => {
     const p = evaluateConstellation(DEFAULT_INPUTS, DEFAULT_CONSTELLATION, 300e3)
     expect(p.replacementsPerYear).toBeCloseTo(p.satellites / (p.life_s / 31_557_600), 9)
-    expect(p.massPerYear_kg).toBeCloseTo(p.replacementsPerYear * p.satellite.wetMass_kg, 9)
+    expect(p.massPerYear_kg).toBeCloseTo(p.replacementsPerYear * p.wetMass_kg, 9)
   })
 
   it('payload scale is 1 at the reference altitude and fixed in as-built mode', () => {
     expect(evaluateConstellation(DEFAULT_INPUTS, DEFAULT_CONSTELLATION, 300e3).payloadScale).toBe(1)
     expect(evaluateConstellation({ ...DEFAULT_INPUTS, mode: 'asBuilt' }, DEFAULT_CONSTELLATION, 450e3).payloadScale).toBe(1)
+  })
+
+  it('design mode sizes propellant to the design life at every altitude', () => {
+    for (const h of [220e3, 300e3, 450e3]) {
+      const p = evaluateConstellation(DEFAULT_INPUTS, DEFAULT_CONSTELLATION, h)
+      if (!p.feasible) continue
+      expect(p.life_s).toBe(DEFAULT_INPUTS.designLife_s)
+      expect(p.propellant_kg).toBeCloseTo((p.satellite.drag_N * p.life_s) / (9.80665 * DEFAULT_INPUTS.isp_s), 9)
+    }
   })
 })

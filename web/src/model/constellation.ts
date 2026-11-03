@@ -1,7 +1,8 @@
 // Constellation sizing and sustainment, analytic (docs/physics.md §10).
 
-import { DEG, R_EARTH, YEAR_S } from './constants'
+import { DEG, G0, R_EARTH, YEAR_S } from './constants'
 import { period_s, radius_m } from './orbit'
+import { PROPULSION_PRESETS } from './propulsion'
 import { evaluateSatellite, type SatelliteInputs, type SatelliteResult } from './satellite'
 
 export type CoverageType = 'revisit' | 'continuous'
@@ -72,6 +73,7 @@ export function satellitesForRevisit(
 /** Satellites for continuous single coverage up to a latitude, hexagonal packing (§10.3). */
 export function satellitesForContinuous(centralAngle_rad: number, latitudeMax_deg: number): number {
   const area = 4 * Math.PI * Math.sin(latitudeMax_deg * DEG)
+  // Idealised lower bound: real Walker / streets-of-coverage designs need somewhat more.
   return Math.ceil(area / (((3 * Math.sqrt(3)) / 2) * centralAngle_rad ** 2))
 }
 
@@ -81,6 +83,9 @@ export interface ConstellationPoint {
   groundWidth_m: number
   satellites: number
   satellite: SatelliteResult
+  /** Wet mass used: in Design mode, dry mass plus propellant and tank sized for the design life. */
+  wetMass_kg: number
+  propellant_kg: number
   /** Payload scale factor applied at this altitude (design mode). */
   payloadScale: number
   life_s: number
@@ -108,7 +113,15 @@ export function evaluateConstellation(sat: SatelliteInputs, c: ConstellationInpu
     c.coverage === 'revisit'
       ? satellitesForRevisit(altitude_m, width, c.revisit_s, c.passesPerOrbit, sat.inclination_deg)
       : satellitesForContinuous(angle, c.latitudeMax_deg)
-  const life = satellite.missionLife_s
+  // Design mode: carry exactly the propellant (and tank) needed to hold altitude for the design life,
+  // so life is set by the design life, not by a propellant load chosen for a different altitude.
+  // As built: the spacecraft and its propellant are fixed.
+  const sized = sat.mode === 'design'
+  const propellant = sized ? (satellite.drag_N * sat.designLife_s) / (G0 * sat.isp_s) : sat.propellant_kg
+  const wetMass = sized
+    ? satellite.dryMass_kg + propellant * (1 + PROPULSION_PRESETS[sat.propulsion].tankFraction)
+    : satellite.wetMass_kg
+  const life = sized ? (satellite.feasible ? Math.min(sat.designLife_s, satellite.impulseLife_s) : 0) : satellite.missionLife_s
   const feasible = satellite.feasible && life > 0 && Number.isFinite(satellites) && satellites > 0
   const replacements = feasible ? satellites / (life / YEAR_S) : NaN
   return {
@@ -117,11 +130,13 @@ export function evaluateConstellation(sat: SatelliteInputs, c: ConstellationInpu
     groundWidth_m: width,
     satellites,
     satellite,
+    wetMass_kg: wetMass,
+    propellant_kg: propellant,
     payloadScale: scale,
     life_s: life,
     replacementsPerYear: replacements,
-    deploymentMass_kg: feasible ? satellites * satellite.wetMass_kg : NaN,
-    massPerYear_kg: feasible ? replacements * satellite.wetMass_kg : NaN,
+    deploymentMass_kg: feasible ? satellites * wetMass : NaN,
+    massPerYear_kg: feasible ? replacements * wetMass : NaN,
     feasible,
   }
 }

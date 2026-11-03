@@ -153,7 +153,9 @@ From Gauss's variational equations for a circular orbit with tangential drag:
 
 - With density a function of altitude only (exploration mode), integrate in altitude:
   t = ∫ B / (√(μ a) ρ(a)) da from reentry to the start altitude. This is exact and stable.
-  Python: `solve_ivp` over a; TypeScript: composite Simpson on 0.25 km steps.
+  Python: `solve_ivp` over a; TypeScript: composite Simpson on 0.25 km steps (`decayLifetime_s`),
+  and for interactive sweeps a cached cumulative trapezoid table I(h) on 0.25 km steps so that
+  lifetime = B · I(h) (`decayIntegralTable`; agrees with Simpson within 0.1%).
 - Mission-life mode (time-varying F10.7) integrates in time [v2].
 - **Reentry altitude** h_re = 120 km (below this, reentry follows within hours).
 - **Lifetime** = time from h₀ to h_re.
@@ -257,8 +259,18 @@ data):
 | Hall | 0.15 | 3 | Xenon/krypton tank, flow control, cathode |
 | RF plasma | 0.15 | 2 | Gas feed; no electrodes |
 
-Plus PPU mass α_ppu P for electric thrusters (§7). Winners near the boundary between regions differ by
-little mass; the app shows the runner-up and the margin.
+Plus PPU mass α_ppu P for electric thrusters (§7).
+
+**Minimum operating power** (teaching estimates): Hall 100 W, gridded ion 50 W, RF plasma 20 W, FEEP 5 W,
+electrospray none (modular). Thruster power is max(required, minimum); the power system is sized for
+it and the thruster fires intermittently, so propellant use still follows drag.
+
+**Ties and sensitivity:** a winner within 10% of the runner-up's wet mass is shown as a tie (faded).
+An "equal fixed masses" switch gives every technology the same 2 kg fixed system mass, to show how much
+of each result comes from the estimates; the generic optimal-Isp curve always uses 2 kg.
+
+**Not yet modelled:** mass per thruster module, thruster wear life (total impulse per unit), efficiency
+falling at low power, and battery mass.
 
 ## 6. Eclipse and power [v1]
 
@@ -269,8 +281,9 @@ little mass; the app shows the runner-up and the margin.
 - else eclipse fraction f_e = (1/π) · acos( √(h² + 2 R⊕ h) / (r cos β) ).
 
 β* ≈ 73° at 300 km, ≈ 78° at 150 km. A dawn-dusk sun-synchronous orbit has β ranging
-roughly 60°–90° over the year, so **it has eclipse seasons in VLEO.** Default worst case
-β = 0 for non-SSO orbits; SSO uses the seasonal worst case.
+roughly 60°–90° over the year, so **it has eclipse seasons in VLEO.** β is a user input; the
+default β = 0 is the worst case. (Automatic seasonal β for sun-synchronous orbits is not yet
+implemented.)
 
 ### 6.2 Solar array sizing (after SMAD)
 
@@ -303,10 +316,16 @@ Unknowns: dry mass m_dry, array area A_array, thruster power P_thr. Iterate:
 5. P_thr from §5.1 with T_fire = D / d.
 6. m_dry = m_payload + m_bus_fixed + f_struct · m_dry + σ_array A_array + α_ppu P_thr + m_thruster_fixed
    (solved for m_dry each pass). Teaching defaults: f_struct = 0.25, α_ppu = 0.02 kg/W.
-7. Repeat until relative change < 10⁻⁶ (damped fixed-point, damping 0.5, max 200 passes).
+7. Repeat until relative change < 10⁻⁷. The update is monotone (more mass → more area → more drag →
+   more power → more mass), so plain fixed-point iteration from the drag-free design rises steadily
+   to the solution, at a rate set by the effective loop gain (up to 20,000 passes near the wall).
 
-**Infeasible** if the loop diverges (m_dry > 10⁵ kg or no convergence), or if any required
-quantity is negative.
+**Infeasible** (no design closes) if:
+- the loop diverges — effective loop gain ≥ 1, so mass grows without bound (detected as m_dry > 10⁶ kg); or
+- it converges, but to a dry mass more than **10×** the same spacecraft with no drag to fight
+  (`MASS_GROWTH_LIMIT`, a stated practicality limit, not physics).
+
+The drag-free reference sizes arrays for bus and payload loads only.
 
 ### 7.1 Loop gain (why there is a hard floor)
 
@@ -315,10 +334,12 @@ adds drag, which needs more thruster power. The loop gain is
 
   G = (½ ρ v² C_D k_array) · (g₀ Isp / (2η d)) · (1 / p_array)
 
-where p_array is the thruster power one square metre of array can support:
+where ρ is the **storm-margin density** ρ·k_storm used for sizing, and p_array is the thruster power one
+square metre of array can support:
 p_array = S η_cell F_pack L_d cos θ_avg / E, with E = 1/X_d + (f_e / ((1 − f_e) X_e) if the
-thruster also fires in eclipse). Mass feedback (array and PPU mass enlarge the body) adds a
-little more gain, so in practice designs stop closing slightly below G = 1. **If G ≥ 1 no design exists at
+thruster also fires in eclipse). Mass feedback (array and PPU mass enlarge the body) adds a little
+more gain, so the effective gain is slightly above G: with defaults the wall falls where G ≈ 0.9–1.
+A test checks that designs with G < 0.85 close and designs with G > 1.05 do not. **If G ≥ 1 no design exists at
 that altitude.** Because ρ grows exponentially as h drops, G crosses 1 at a critical altitude
 — the hard left wall of the U-curve. Higher Isp raises G: high-Isp thrusters hit the floor at
 higher altitude unless arrays are edge-on (small k_array).
@@ -422,8 +443,9 @@ Global or latitude-band single coverage, hexagonal packing estimate:
 
   N_cont ≈ (4π · sin φ_max) / ((3√3/2) λ²)
 
-for coverage up to latitude φ_max (λ in radians, small-angle). Refined with Rider's
-streets-of-coverage method and by simulation. Scales ∝ ~1/λ² ∝ ~1/h².
+for coverage up to latitude φ_max (λ in radians, small-angle). This ideal packing is a lower bound;
+real Walker / streets-of-coverage designs need somewhat more. Refined with Rider's method and by
+simulation in v2. Scales ∝ ~1/λ² ∝ ~1/h².
 
 ---
 
@@ -434,8 +456,11 @@ streets-of-coverage method and by simulation. Scales ∝ ~1/λ² ∝ ~1/h².
   for optical imaging at fixed resolution (aperture ∝ h, mass ∝ aperture^~2.5); k = 2 for a
   direct-to-device antenna at fixed link margin (area ∝ h²); k = 0 keeps the payload fixed. Design mode
   only; v2 replaces this with requirement-based payload sizing (§9).
-- At each altitude the satellite is sized by the closed loop (§7) with the scaled payload; its mission
-  life is min(propellant, total impulse, design life) (§5.6).
+- At each altitude the satellite is sized by the closed loop (§7) with the scaled payload. In Design
+  mode it carries exactly the propellant needed to hold altitude for the design life,
+  m_p = D · t_design / (g₀ Isp), plus tank (§5.7), so its life is min(design life, total-impulse life).
+  (Otherwise the optimum would be set by whatever propellant load was chosen in Explore.) As built, the
+  spacecraft and its propellant are fixed.
 - **Replacement rate** = N / t_life. **Mass to orbit per year** = replacement rate × wet mass
   (steady state; excludes launch-vehicle adapters and dispensers). **Deployment mass** = N × wet mass.
 - **Optimum altitude** = minimum of mass to orbit per year over feasible altitudes. Left wall: drag
@@ -471,6 +496,6 @@ Steady-state replacement view: ignores financing and the time value of money; st
 | MSIS tables vs Vallado exponential model, 200–500 km, moderate activity | within ×3 | v1 |
 | Solar max ÷ solar min density ratio | ~×2–3 at 200 km rising to ×10+ at 450 km | v1 |
 | ISS decay (~420 km, B ≈ 100–150 kg/m²) | order of a few km per month | v1, loose band |
-| GOCE (~1,050 kg, 1.1 m² frontal, ~260 km, 1–20 mN thrust range) | modelled drag within thruster range | v1, loose band |
+| GOCE (~1,050 kg, ≈1 m² frontal, ~260 km, 1–20 mN thrust range) | modelled drag within thruster range | v1, loose band |
 | Starlink Feb 2022 storm at ~210 km | storm-margin density makes small Starlink-class satellites infeasible | v1 |
 | NASA DAS / STK lifetime comparisons | within ×2 | later, when data are gathered |

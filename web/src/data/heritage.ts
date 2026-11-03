@@ -117,7 +117,7 @@ export const HERITAGE_MISSIONS: HeritageMission[] = [
       { label: 'Thrusters', value: '2 × T5 gridded ion (one active), 1–20 mN, throttled', status: 'published', source: 3 },
       { label: 'Specific impulse', value: '≈3,000 s', status: 'published', source: 3 },
       { label: 'Orbit', value: 'Dawn-dusk sun-synchronous, 96.7°', status: 'published', source: 2 },
-      { label: 'Altitude', value: '≈255 km, lowered to 224 km from Aug 2012', status: 'published', source: 1 },
+      { label: 'Altitude', value: '≈255 km; lowered in steps from Aug 2012, reaching ≈224 km in 2013', status: 'published', source: 1 },
       { label: 'Solar activity', value: 'F10.7 ≈ 70 (2009) rising to ≈130 (2013)', status: 'estimated', note: 'Solar cycle 24 rise.' },
     ],
     checks: [
@@ -179,7 +179,7 @@ export const HERITAGE_MISSIONS: HeritageMission[] = [
     },
     parameters: [
       { label: 'Launch mass', value: '383 kg', status: 'published', source: 0 },
-      { label: 'Xenon propellant', value: '10 kg', status: 'published', source: 1 },
+      { label: 'Xenon propellant', value: '10 kg (eoPortal; other figures exist, so treat as approximate)', status: 'published', source: 1 },
       { label: 'Dry mass used', value: '373 kg', status: 'estimated', note: 'Launch mass minus xenon; chemical propellant ignored.' },
       { label: 'Ion engine', value: '10–28 mN, Isp ≈ 2,000 s, 370 W at 10 mN', status: 'published', source: 1 },
       {
@@ -356,7 +356,7 @@ export const HERITAGE_MISSIONS: HeritageMission[] = [
       'Forty-nine broadband satellites were released into a deliberately low initial orbit (about 210 km) so that any failures would reenter quickly. A minor geomagnetic storm raised upper-atmosphere density; the satellites were put into a low-drag safe mode but could not climb out, and 38 reentered within days.',
     teaches: [
       'At 210 km there is almost no time: a satellite that cannot thrust falls in days',
-      'Even a minor storm matters when thrust margin is thin',
+      'Even a minor storm matters at 210 km, where there is no time to recover',
       'The value of a low insertion orbit for debris safety',
     ],
     inputs: {
@@ -385,7 +385,7 @@ export const HERITAGE_MISSIONS: HeritageMission[] = [
         note: 'Panel and array turned edge-on to the flow; the exact value is not public.',
       },
       { label: 'Propulsion', value: 'Krypton Hall-effect thrusters', status: 'published', source: 2 },
-      { label: 'Storm effect', value: '≈20% density increase at 210 km', status: 'published', source: 3 },
+      { label: 'Storm effect', value: 'Density rise at 210 km: ≈20% in one study; other studies estimate more', status: 'published', source: 3 },
     ],
     checks: [
       {
@@ -396,7 +396,7 @@ export const HERITAGE_MISSIONS: HeritageMission[] = [
         source: 0,
         f107Range: [120, 140],
         lesson:
-          'The model gives about ten days with no thrust at all — consistent with satellites that could not raise their orbit. Change Ap in the storm margin to see how little a 20% density rise changes the answer: the real problem is thrust margin, not the storm itself.',
+          'The model gives about ten days with no thrust at all, consistent with satellites that could not climb out. At 210 km even a modest density rise shortens an already tiny margin: load this mission into Explore and move the storm-margin slider to see how quickly the time runs out.',
       },
     ],
     sources: [
@@ -414,10 +414,10 @@ export const HERITAGE_MISSIONS: HeritageMission[] = [
     years: '2025–2026',
     altitudeText: '≈510 → 320 km',
     summary:
-      'A 530 kg commercial imaging satellite built specifically for VLEO. Released by a rideshare at about 510 km, it descended under its own propulsion toward its operating orbit. It measured drag 12% better than its design target, but lost two of its four control-moment gyroscopes and stopped responding after nine months. It reentered on 10 June 2026.',
+      'A 530 kg commercial imaging satellite built specifically for VLEO. Released by a rideshare at about 510 km, it descended under its own propulsion toward its operating orbit. It measured drag 12% better than its design target. It lost two of its four control-moment gyroscopes during the mission, and contact was lost after about nine months; Albedo has not published a link between the two. It reentered on 10 June 2026.',
     teaches: [
       'The rideshare-then-descend route into VLEO',
-      'VLEO risks are not only drag: attitude-control hardware ended this mission',
+      'VLEO risks are not only drag: attitude-control hardware was the mission’s main reported problem',
       'What a five-year life at 275 km demands in propellant',
     ],
     inputs: {
@@ -442,7 +442,7 @@ export const HERITAGE_MISSIONS: HeritageMission[] = [
       { label: 'Design goal', value: '5-year life at 275 km', status: 'published', source: 2 },
       { label: 'Propulsion', value: 'Hall-effect thruster (single secondary source)', status: 'estimated', note: 'Thrust, Isp and propellant mass are not public; Hall class defaults used.' },
       { label: 'Drag area, propellant', value: '≈1 m², 20 kg', status: 'estimated', note: 'Not public; from the 1 m width and a typical propellant fraction.' },
-      { label: 'End of mission', value: 'Contact lost after ≈9 months (CMG failures); reentry 10 Jun 2026', status: 'published', source: 2 },
+      { label: 'End of mission', value: 'Two of four CMGs lost; contact lost after ≈9 months (cause not published); reentry 10 Jun 2026', status: 'published', source: 2 },
     ],
     checks: [
       {
@@ -455,7 +455,7 @@ export const HERITAGE_MISSIONS: HeritageMission[] = [
         f107Range: [80, 180],
         duration_s: 5 * YEAR_S,
         lesson:
-          'The answer swings by a factor of several with solar activity — which is why VLEO operators plan around the solar cycle. Try other propulsion classes in Explore to see how Isp changes the tank size.',
+          'The answer changes by a factor of two to three across the solar cycle — which is why VLEO operators plan around it. Try other propulsion classes in Explore to see how Isp changes the tank size.',
       },
     ],
     sources: [
