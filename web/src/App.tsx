@@ -12,8 +12,8 @@ type Tab = 'explore' | 'propulsion' | 'heritage'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'explore', label: 'Explore' },
-  { id: 'propulsion', label: 'Propulsion trade' },
   { id: 'heritage', label: 'Heritage missions' },
+  { id: 'propulsion', label: 'Propulsion trade' },
 ]
 
 function tabFromHash(hash: string): Tab {
