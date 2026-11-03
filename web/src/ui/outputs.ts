@@ -11,6 +11,8 @@ export interface OutputCard {
   raw: (r: SatelliteResult) => number
   equation: string
   why: string
+  /** Hide in As-built mode, where the value is not computed. */
+  designOnly?: boolean
 }
 
 export interface OutputGroup {
@@ -57,18 +59,19 @@ export const OUTPUT_GROUPS: OutputGroup[] = [
     ],
   },
   {
-    title: 'Spacecraft (closed sizing loop)',
+    title: 'Spacecraft',
     cards: [
       {
         id: 'dryMass',
         label: 'Dry mass',
-        value: (r) => `${sig(r.dryMass_kg, 3)} kg`,
+        value: (r) => `${sig(r.dryMass_kg, 4)} kg`,
         raw: (r) => r.dryMass_kg,
         equation: 'm_dry = (payload + bus + arrays + PPU + thruster) / (1 − f_struct)',
         why: 'More drag needs more thruster power, which needs more array, which adds mass and drag. The model iterates until these agree.',
       },
       {
         id: 'arrayArea',
+        designOnly: true,
         label: 'Solar array area',
         value: (r) => `${sig(r.arrayArea_m2, 2)} m²`,
         raw: (r) => r.arrayArea_m2,
@@ -93,6 +96,7 @@ export const OUTPUT_GROUPS: OutputGroup[] = [
       },
       {
         id: 'loopGain',
+        designOnly: true,
         label: 'Sizing-loop gain',
         value: (r) => sig(r.loopGain, 2),
         raw: (r) => r.loopGain,
@@ -114,14 +118,15 @@ export const OUTPUT_GROUPS: OutputGroup[] = [
       },
       {
         id: 'thrusterPower',
-        label: 'Thruster power (storm-sized)',
+        label: 'Thruster power',
         value: (r) => si(r.thrusterPower_W, 'W', 3),
         raw: (r) => r.thrusterPower_W,
-        equation: 'P = T·g₀·Isp / (2η), T = D_storm / duty',
-        why: 'Sized for storm-level density. Higher Isp saves propellant but costs power for the same thrust.',
+        equation: 'P = T·g₀·Isp / (2η); Design: T = D_storm / duty; As built: T = D / duty',
+        why: 'In Design mode, sized for storm-level density; as built, the power to hold altitude at nominal density. Higher Isp saves propellant but costs power for the same thrust.',
       },
       {
         id: 'thrusterUnits',
+        designOnly: true,
         label: 'Thruster units',
         value: (r) => sig(r.thrusterUnits, 3),
         raw: (r) => r.thrusterUnits,
@@ -135,6 +140,14 @@ export const OUTPUT_GROUPS: OutputGroup[] = [
         raw: (r) => r.propellantPerYear_kg,
         equation: 'ṁ = D / (g₀·Isp)',
         why: 'Independent of spacecraft mass at constant altitude: only drag and Isp matter.',
+      },
+      {
+        id: 'thrustMargin',
+        label: 'Thrust margin',
+        value: (r) => `×${sig(r.thrustMargin, 2)}`,
+        raw: (r) => r.thrustMargin,
+        equation: 'available thrust × duty ÷ drag',
+        why: 'Above 1 the thruster can hold altitude at nominal density. In Design mode it equals the storm margin; in As-built mode it is whatever the hardware allows.',
       },
       {
         id: 'missionLife',
@@ -165,6 +178,14 @@ export const OUTPUT_GROUPS: OutputGroup[] = [
         raw: (r) => r.naturalLifetime_s,
         equation: 't = B·∫ da / (√(μa)·ρ)',
         why: 'How long a satellite stays up if its thruster fails on day one. Grows exponentially with altitude.',
+      },
+      {
+        id: 'decayRate',
+        label: 'Decay rate with no thrust',
+        value: (r) => (r.decayRate_m_day >= 1000 ? si(r.decayRate_m_day, 'm/day', 2) : `${sig(r.decayRate_m_day, 2)} m/day`),
+        raw: (r) => r.decayRate_m_day,
+        equation: 'da/dt = −√(μa)·ρ / B',
+        why: 'How fast the orbit shrinks right now if thrust stops. Compare it with how often you could fire a thruster or schedule a reboost.',
       },
       {
         id: 'disposal',

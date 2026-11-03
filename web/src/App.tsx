@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
+import { HERITAGE_MISSIONS, type HeritageMission } from './data/heritage'
+import { heritageToInputs } from './model/heritage'
+import { YEAR_S } from './model/constants'
 import { evaluateSatellite, type SatelliteInputs } from './model/satellite'
 import { Cards } from './ui/Cards'
 import { KM } from './ui/common'
 import { Controls } from './ui/Controls'
 import { ExploreCharts } from './ui/ExploreCharts'
-import { sig } from './ui/format'
+import { duration, sig } from './ui/format'
+import { Heritage } from './ui/Heritage'
 import { INPUT_INFO, type InfoKey } from './ui/inputInfo'
 import { decodeInputs, encodeInputs } from './ui/urlState'
 
@@ -16,12 +20,26 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'propulsion', label: 'Propulsion trade' },
 ]
 
-function tabFromHash(hash: string): Tab {
-  const tab = new URLSearchParams(hash.replace(/^#/, '')).get('tab')
+const hashParams = () => new URLSearchParams(window.location.hash.replace(/^#/, ''))
+
+function tabFromHash(): Tab {
+  const tab = hashParams().get('tab')
   return TABS.some((t) => t.id === tab) ? (tab as Tab) : 'explore'
 }
 
-function Explore({ inputs, set }: { inputs: SatelliteInputs; set: (patch: Partial<SatelliteInputs>) => void }) {
+function missionFromHash(): string | null {
+  const id = hashParams().get('mission')
+  return HERITAGE_MISSIONS.some((m) => m.id === id) ? id : null
+}
+
+interface ExploreProps {
+  inputs: SatelliteInputs
+  set: (patch: Partial<SatelliteInputs>) => void
+  loaded: HeritageMission | null
+  onShowMission: () => void
+}
+
+function Explore({ inputs, set, loaded, onShowMission }: ExploreProps) {
   const [openInfo, setOpenInfo] = useState<InfoKey | null>(null)
   const result = useMemo(() => evaluateSatellite(inputs), [inputs])
   const highlight = useMemo(() => new Set(openInfo ? INPUT_INFO[openInfo].affects : []), [openInfo])
@@ -30,7 +48,30 @@ function Explore({ inputs, set }: { inputs: SatelliteInputs; set: (patch: Partia
     <div className="layout">
       <Controls inputs={inputs} set={set} openInfo={openInfo} setOpenInfo={setOpenInfo} />
       <main>
-        {!result.feasible && (
+        {loaded && (
+          <div className="banner info-banner">
+            Started from <strong>{loaded.name}</strong> as built. Any change you make is yours, not the real spacecraft.{' '}
+            <button type="button" className="link" onClick={onShowMission}>
+              Back to the mission
+            </button>
+          </div>
+        )}
+        {!result.feasible && result.infeasibility === 'thrustBelowDrag' && (
+          <div className="banner" role="alert">
+            {inputs.asBuilt.maxThrust_N > 0 ? (
+              <>
+                <strong>Thrust below drag at {inputs.altitude_m / KM} km.</strong> Available{' '}
+                {sig(inputs.asBuilt.maxThrust_N * 1e3, 2)} mN × duty vs drag {sig(result.drag_N * 1e3, 2)} mN (margin ×
+                {sig(result.thrustMargin, 2)}). The spacecraft cannot hold this altitude.
+              </>
+            ) : (
+              <strong>No drag-makeup thrust.</strong>
+            )}{' '}
+            With no thrust it would reenter in about {duration(result.naturalLifetime_s)}, losing{' '}
+            {sig(result.decayRate_m_day / 1e3, 2)} km per day now.
+          </div>
+        )}
+        {!result.feasible && result.infeasibility !== 'thrustBelowDrag' && (
           <div className="banner" role="alert">
             <strong>No design closes at {inputs.altitude_m / KM} km.</strong> Drag from the arrays needed to power the
             thruster grows faster than the thrust they provide (sizing-loop gain {sig(result.loopGain, 2)}). Try
@@ -57,13 +98,29 @@ function ComingSoon({ title, release, children }: { title: string; release: stri
 
 export default function App() {
   const [inputs, setInputs] = useState<SatelliteInputs>(() => decodeInputs(window.location.hash))
-  const [tab, setTab] = useState<Tab>(() => tabFromHash(window.location.hash))
+  const [tab, setTab] = useState<Tab>(tabFromHash)
+  const [missionId, setMissionId] = useState<string>(() => missionFromHash() ?? HERITAGE_MISSIONS[0].id)
+  // The heritage mission the Explore inputs were loaded from, shown as a reminder banner.
+  const [loadedId, setLoadedId] = useState<string | null>(() => (hashParams().get('loaded') ? missionFromHash() : null))
   const set = (patch: Partial<SatelliteInputs>) => setInputs((prev) => ({ ...prev, ...patch }))
+  const loaded = HERITAGE_MISSIONS.find((m) => m.id === loadedId) ?? null
 
   useEffect(() => {
-    const params = encodeInputs(inputs)
-    window.history.replaceState(null, '', `#${tab === 'explore' ? '' : `tab=${tab}&`}${params}`)
-  }, [inputs, tab])
+    const prefix = new URLSearchParams()
+    if (tab !== 'explore') prefix.set('tab', tab)
+    if (tab === 'heritage' || loadedId) prefix.set('mission', tab === 'heritage' ? missionId : loadedId!)
+    if (loadedId && tab === 'explore') prefix.set('loaded', '1')
+    const head = prefix.toString()
+    window.history.replaceState(null, '', `#${head ? `${head}&` : ''}${encodeInputs(inputs)}`)
+  }, [inputs, tab, missionId, loadedId])
+
+  const loadMission = (mission: HeritageMission) => {
+    // A finite design life keeps the Explore slider meaningful; heritage checks themselves use no cap.
+    setInputs({ ...heritageToInputs(mission), designLife_s: 15 * YEAR_S })
+    setLoadedId(mission.id)
+    setTab('explore')
+    window.scrollTo({ top: 0 })
+  }
 
   return (
     <div className="app">
@@ -90,7 +147,18 @@ export default function App() {
         </nav>
       </header>
 
-      {tab === 'explore' && <Explore inputs={inputs} set={set} />}
+      {tab === 'explore' && (
+        <Explore
+          inputs={inputs}
+          set={set}
+          loaded={loaded}
+          onShowMission={() => {
+            if (loaded) setMissionId(loaded.id)
+            setTab('heritage')
+          }}
+        />
+      )}
+      {tab === 'heritage' && <Heritage selectedId={missionId} onSelect={setMissionId} onLoad={loadMission} />}
       {tab === 'propulsion' && (
         <ComingSoon title="Propulsion trade" release="v1.3">
           <p>
@@ -105,28 +173,12 @@ export default function App() {
           </ul>
         </ComingSoon>
       )}
-      {tab === 'heritage' && (
-        <ComingSoon title="Heritage missions" release="v1.2">
-          <p>
-            Load a spacecraft that actually flew in or through VLEO, see realistic starting parameters, compare its real
-            outcome with the model, then change one thing at a time. Planned missions:
-          </p>
-          <ul>
-            <li>GOCE (ESA, 2009–13) — drag-free gravity mapping at 255–224 km with an ion thruster.</li>
-            <li>SLATS / Tsubame (JAXA, 2017–19) — lowest sustained Earth-observation orbit, down to 167 km.</li>
-            <li>CHAMP (GFZ, 2000–10) — natural decay from 454 km with no drag makeup.</li>
-            <li>SOAR (EU DISCOVERER, 2021–22) — CubeSat testing aerodynamic control and materials.</li>
-            <li>Starlink, February 2022 — a geomagnetic storm at about 210 km and the case for a storm margin.</li>
-            <li>Albedo Clarity-1 (2025–26) — commercial VLEO imaging demonstration.</li>
-            <li>International Space Station — the familiar reference for decay and reboost.</li>
-          </ul>
-        </ComingSoon>
-      )}
 
       <footer>
         Academic, vendor-neutral teaching tool. Physics and references:{' '}
-        <a href="https://github.com/petersedivec/vleo-explorer/blob/main/docs/physics.md">docs/physics.md</a>. Atmosphere:
-        NRLMSIS 2.1, orbit-averaged. Not for flight or investment decisions.
+        <a href="https://github.com/petersedivec/vleo-explorer/blob/main/docs/physics.md">docs/physics.md</a>. Heritage
+        data: public sources cited per mission. Atmosphere: NRLMSIS 2.1, orbit-averaged. Not for flight or investment
+        decisions.
       </footer>
     </div>
   )

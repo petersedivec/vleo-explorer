@@ -24,7 +24,9 @@ export function Cards({ inputs, result, highlight }: CardsProps) {
         <section key={group.title} className="group">
           <h2>{group.title}</h2>
           <div className="cards">
-            {group.cards.map((card) => {
+            {group.cards
+              .filter((card) => !(card.designOnly && inputs.mode === 'asBuilt'))
+              .map((card) => {
               const now = card.raw(result)
               const before = prior ? card.raw(prior) : NaN
               const change = Number.isFinite(now) && Number.isFinite(before) && before !== 0 ? now / before - 1 : 0

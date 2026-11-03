@@ -45,7 +45,7 @@ export function ExploreCharts({ inputs }: { inputs: SatelliteInputs }) {
   }))
   const decayData = MODES.map((m) => ({
     x: SWEEP_KM,
-    y: sweeps[m].map((r) => (r.feasible ? r.naturalLifetime_s / YEAR_S : null)),
+    y: sweeps[m].map((r) => (r.infeasibility === 'loopDiverged' || r.infeasibility === 'loopNotConverged' ? null : r.naturalLifetime_s / YEAR_S)),
     name: MODE_LABEL[m],
     mode: 'lines',
     line: { color: cssColor(MODE_COLOR[m]), width: 2 },
@@ -60,7 +60,7 @@ export function ExploreCharts({ inputs }: { inputs: SatelliteInputs }) {
     })),
     {
       x: SWEEP_KM,
-      y: sweeps.moderate.map((r) => (r.feasible ? r.drag_N * 1e3 : null)),
+      y: sweeps.moderate.map((r) => (r.infeasibility === 'loopDiverged' || r.infeasibility === 'loopNotConverged' ? null : r.drag_N * 1e3)),
       name: 'Drag (moderate), mN',
       mode: 'lines',
       yaxis: 'y2',
@@ -88,7 +88,7 @@ export function ExploreCharts({ inputs }: { inputs: SatelliteInputs }) {
     <div className="charts">
       <figure>
         <figcaption>
-          <strong>Mission life vs altitude.</strong> Shaded: no design closes (moderate activity). Life is capped by
+          <strong>Mission life vs altitude.</strong> Shaded: no design closes, or (as built) thrust is below drag, at moderate activity. Life is capped by
           propellant, thruster impulse or design life.
         </figcaption>
         <Chart

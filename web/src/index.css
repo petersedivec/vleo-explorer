@@ -499,3 +499,272 @@ footer {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
+
+/* ── Explore extras ───────────────────────────────────────────────────── */
+
+.control-note {
+  margin: 4px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.info-banner {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+button.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ── Heritage missions ────────────────────────────────────────────────── */
+
+.heritage .intro {
+  max-width: 80ch;
+  margin: 0 0 14px;
+}
+
+.mission-picker {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(46%, 190px), 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.mission-tile {
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.mission-tile.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.mission-name {
+  font-weight: 600;
+}
+
+.mission-meta {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.category {
+  margin-top: 4px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-radius: 999px;
+  padding: 1px 7px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.category.commercial {
+  background: var(--warn-bg);
+  color: var(--text);
+}
+
+.mission-detail {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  max-width: 980px;
+}
+
+.mission-detail > header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mission-detail h2 {
+  margin: 0;
+}
+
+.mission-detail h3 {
+  font-size: 1rem;
+  margin: 20px 0 8px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.82rem;
+}
+
+button.primary {
+  border: 0;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--surface);
+  font: inherit;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.checks {
+  display: grid;
+  gap: 10px;
+}
+
+.check {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.check h4 {
+  margin: 0 0 6px;
+  font-size: 0.95rem;
+}
+
+.check dl {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.check dl > div {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 500px) {
+  .check dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+}
+
+.check dt {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.check dd {
+  margin: 0;
+}
+
+.check p {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+}
+
+.verdict {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.verdict.ok {
+  background: color-mix(in srgb, var(--down) 18%, transparent);
+  color: var(--down);
+}
+
+.verdict.warn {
+  background: var(--warn-bg);
+  color: var(--text);
+}
+
+.verdict.off {
+  background: color-mix(in srgb, var(--up) 15%, transparent);
+  color: var(--up);
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table.params {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+table.params th,
+table.params td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+table.params thead th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+table.params tbody th {
+  font-weight: 500;
+  width: 30%;
+}
+
+table.params td:last-child {
+  white-space: nowrap;
+}
+
+table.params td:last-child a {
+  margin-left: 6px;
+}
+
+.note {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.status {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 1px 7px;
+}
+
+.status.published {
+  background: color-mix(in srgb, var(--down) 18%, transparent);
+  color: var(--down);
+}
+
+.status.estimated {
+  background: var(--warn-bg);
+  color: var(--text);
+}
+
+.sources {
+  font-size: 0.88rem;
+  padding-left: 20px;
+}
+
+.sources li {
+  margin-bottom: 4px;
+}

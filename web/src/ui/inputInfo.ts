@@ -28,6 +28,10 @@ export type InfoKey =
   | 'propellant'
   | 'designLife'
   | 'thrustInEclipse'
+  | 'mode'
+  | 'asBuiltMass'
+  | 'asBuiltArea'
+  | 'maxThrust'
 
 export const INPUT_INFO: Record<InfoKey, InputInfo> = {
   altitude: {
@@ -42,7 +46,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     ],
     insight: 'The central VLEO trade: mission benefits improve polynomially as you go lower, but the cost of staying there grows exponentially. Somewhere is a sweet spot, and it moves with everything else.',
     reference: 'Vallado, Fundamentals of Astrodynamics, ch. 8',
-    affects: ['density', 'scaleHeight', 'speed', 'eclipse', 'drag', 'thrusterPower', 'propPerYear', 'missionLife', 'naturalLifetime', 'disposal', 'heat', 'oxygen', 'dryMass', 'arrayArea', 'loopGain'],
+    affects: ['density', 'scaleHeight', 'speed', 'eclipse', 'drag', 'thrusterPower', 'propPerYear', 'missionLife', 'naturalLifetime', 'disposal', 'heat', 'oxygen', 'dryMass', 'arrayArea', 'loopGain', 'decayRate', 'thrustMargin'],
   },
   inclination: {
     title: 'Inclination',
@@ -78,7 +82,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     ],
     insight: 'Counter-intuitively, the solar cycle matters more the higher you fly. Launch date is a design parameter: the same satellite can last several times longer at solar minimum.',
     reference: 'NRLMSIS 2.1 (Emmert et al., 2021)',
-    affects: ['density', 'scaleHeight', 'drag', 'propPerYear', 'missionLife', 'naturalLifetime', 'disposal', 'oxygen', 'heat'],
+    affects: ['density', 'scaleHeight', 'drag', 'propPerYear', 'missionLife', 'naturalLifetime', 'disposal', 'oxygen', 'heat', 'decayRate', 'thrustMargin'],
   },
   atmosphereModel: {
     title: 'Atmosphere model',
@@ -87,7 +91,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     drives: ['Air density and everything that depends on it'],
     insight: 'The textbook table matches NRLMSIS at moderate activity but cannot show the solar cycle — which is often the biggest uncertainty in VLEO.',
     reference: 'Vallado Table 8-4; Emmert et al., Earth and Space Science, 2021',
-    affects: ['density', 'scaleHeight', 'drag', 'missionLife', 'naturalLifetime'],
+    affects: ['density', 'scaleHeight', 'drag', 'missionLife', 'naturalLifetime', 'decayRate', 'thrustMargin'],
   },
   stormMargin: {
     title: 'Storm margin on density',
@@ -106,7 +110,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     typical: 'A few kg (CubeSat camera) to hundreds of kg (high-resolution telescope or large radar).',
     drives: ['Dry mass (through structure and bus)', 'Body size, so frontal area and drag', 'Ballistic coefficient and natural lifetime'],
     insight: 'Heavier spacecraft are not penalised much by drag: drag depends on area, while resistance to drag grows with mass. Dense spacecraft decay more slowly.',
-    affects: ['dryMass', 'dragArea', 'ballistic', 'drag', 'thrusterPower', 'naturalLifetime', 'disposal'],
+    affects: ['dryMass', 'dragArea', 'ballistic', 'drag', 'thrusterPower', 'naturalLifetime', 'disposal', 'decayRate'],
   },
   payloadPower: {
     title: 'Payload power',
@@ -123,7 +127,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     drives: ['Drag, linearly', 'Ballistic coefficient and natural lifetime, inversely'],
     insight: 'Low-drag shapes and surface coatings that reflect molecules more specularly are active VLEO research — a few percent of C_D is a few percent of propellant.',
     reference: 'Mostaza-Prieto et al. (ADBSat), Computer Physics Communications, 2022',
-    affects: ['drag', 'ballistic', 'thrusterPower', 'propPerYear', 'missionLife', 'naturalLifetime', 'loopGain'],
+    affects: ['drag', 'ballistic', 'thrusterPower', 'propPerYear', 'missionLife', 'naturalLifetime', 'loopGain', 'decayRate', 'thrustMargin'],
   },
   arrays: {
     title: 'Solar arrays',
@@ -170,7 +174,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     typical: 'GOCE carried about 40 kg of xenon for a ~1,000 kg spacecraft.',
     drives: ['Propellant-limited life, linearly', 'Wet mass and ballistic coefficient'],
     insight: 'At constant altitude, propellant use depends only on drag and Isp — not on spacecraft mass. Life = propellant × g₀ × Isp ÷ drag.',
-    affects: ['missionLife', 'limitedBy', 'ballistic', 'naturalLifetime'],
+    affects: ['missionLife', 'limitedBy', 'ballistic', 'naturalLifetime', 'decayRate'],
   },
   designLife: {
     title: 'Design life',
@@ -187,5 +191,37 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     drives: ['Thrust needed while firing', 'Array size (eclipse energy must be stored)'],
     insight: 'Sunlight-only thrusting needs a bigger thruster but smaller batteries. With long eclipses at low altitude, the trade shifts.',
     affects: ['thrusterPower', 'thrusterUnits', 'arrayArea', 'dryMass', 'loopGain'],
+  },
+  mode: {
+    title: 'Design or As built',
+    what: 'Design: the model sizes the spacecraft — arrays, thruster, mass — to hold altitude, and tells you if no design closes. As built: the spacecraft already exists (mass, drag area and thrust are fixed), and the model checks whether it can hold altitude and for how long.',
+    typical: 'Use Design to explore what VLEO demands; use As built for real spacecraft from the Heritage missions tab.',
+    drives: ['Which inputs are shown', 'Whether the sizing loop runs'],
+    insight: 'Designers work in both directions: sizing a new spacecraft for an orbit, and checking what orbit an existing spacecraft can survive in.',
+    affects: ['dryMass', 'dragArea', 'thrusterPower', 'missionLife', 'thrustMargin'],
+  },
+  asBuiltMass: {
+    title: 'Dry mass (as built)',
+    what: 'Spacecraft mass without propellant.',
+    typical: 'CubeSats 1–25 kg; small satellites 100–500 kg; GOCE about 1,000 kg; the ISS about 420,000 kg.',
+    drives: ['Ballistic coefficient, so lifetime with no thrust (linearly)', 'Δv per year needed to hold altitude'],
+    insight: 'Mass does not change the drag force, only how strongly the spacecraft resists it. Heavy, compact spacecraft decay slowly.',
+    affects: ['ballistic', 'naturalLifetime', 'disposal', 'decayRate'],
+  },
+  asBuiltArea: {
+    title: 'Drag area (as built)',
+    what: 'Effective area facing the airflow, including any solar arrays, used with C_D to compute drag.',
+    typical: 'A 3U CubeSat 0.01–0.03 m²; GOCE about 1 m²; the ISS roughly 1,000 m² effective.',
+    drives: ['Drag, linearly', 'Ballistic coefficient and lifetime, inversely'],
+    insight: 'Often the least certain number for a real spacecraft: attitude, array angle and appendages change it from orbit to orbit.',
+    affects: ['drag', 'ballistic', 'naturalLifetime', 'decayRate', 'thrustMargin', 'propPerYear', 'missionLife'],
+  },
+  maxThrust: {
+    title: 'Maximum thrust (as built)',
+    what: 'The most thrust the spacecraft can produce continuously for drag makeup. Zero means no drag makeup — the spacecraft simply decays.',
+    typical: 'Electrospray modules 0.01–1 mN each; GOCE 1–20 mN; SLATS up to 28 mN.',
+    drives: ['Thrust margin: available thrust ÷ drag', 'Whether the spacecraft can hold altitude at all'],
+    insight: 'Below a margin of 1 the spacecraft cannot hold altitude. Above 1 but close to it, a storm or a rising solar cycle can push it under.',
+    affects: ['thrustMargin', 'missionLife'],
   },
 }

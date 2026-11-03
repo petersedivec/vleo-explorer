@@ -285,6 +285,24 @@ higher altitude unless arrays are edge-on (small k_array).
 
 ---
 
+## 7a. As-built mode [v1.2]
+
+For a spacecraft that already exists, the sizing loop is skipped. Inputs: dry mass m_dry, effective drag
+area A (including arrays), C_D, maximum continuous thrust T_max, Isp and propellant.
+
+| Quantity | Equation |
+|---|---|
+| Thrust margin | M = T_max · d / D (nominal density) |
+| Holds altitude | M ≥ 1 |
+| Thruster power to hold altitude (electric) | P = (D / d) · g₀ Isp / (2η) |
+| Decay rate with no thrust | ȧ = √(μ a) · ρ / B, with B at launch (wet) mass |
+
+Mission life, propellant life, natural lifetime and disposal follow §4–§5 with the given mass and area.
+
+**Heritage checks** (`web/src/data/heritage.ts`) compare an observed outcome with the model evaluated at
+the ends of the F10.7 range the mission experienced, with no storm margin and no design-life cap. A
+result within 10% of the model range counts as "within".
+
 ## 8. Descent from a rideshare orbit [v1]
 
 - Edelbaum low-thrust Δv between circular orbits (coplanar): Δv = |v₁ − v₂|.

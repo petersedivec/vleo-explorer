@@ -112,8 +112,22 @@ export function Controls({ inputs, set, openInfo, setOpenInfo }: ControlsProps) 
   const eclipseId = useId()
   const info = (key: InfoKey) => ({ info: key, openInfo, setOpenInfo })
 
+  const asBuilt = inputs.mode === 'asBuilt'
+  const customSolar = solarModeOf(inputs) === null
+
   return (
     <aside className="controls" aria-label="Inputs">
+      <Segmented
+        {...info('mode')}
+        label="Spacecraft"
+        value={inputs.mode}
+        options={[
+          { value: 'design', label: 'Design it' },
+          { value: 'asBuilt', label: 'As built' },
+        ]}
+        onChange={(v) => set({ mode: v })}
+      />
+
       <h2>Orbit</h2>
       <Slider
         {...info('altitude')}
@@ -154,6 +168,11 @@ export function Controls({ inputs, set, openInfo, setOpenInfo }: ControlsProps) 
         options={MODES.map((m) => ({ value: m, label: MODE_LABEL[m] }))}
         onChange={(m) => set({ solar: { ...SOLAR_MODES[m] } })}
       />
+      {customSolar && (
+        <p className="control-note">
+          Custom: F10.7 = {inputs.solar.f107}, Ap = {inputs.solar.ap}
+        </p>
+      )}
       <Segmented
         {...info('atmosphereModel')}
         label="Atmosphere model"
@@ -176,48 +195,81 @@ export function Controls({ inputs, set, openInfo, setOpenInfo }: ControlsProps) 
       />
 
       <h2>Spacecraft</h2>
-      <Slider
-        {...info('payloadMass')}
-        label="Payload mass"
-        value={inputs.payloadMass_kg}
-        min={1}
-        max={500}
-        step={1}
-        log
-        display={`${sig(inputs.payloadMass_kg, 2)} kg`}
-        onChange={(v) => set({ payloadMass_kg: round2(v) })}
-      />
-      <Slider
-        {...info('payloadPower')}
-        label="Payload power"
-        value={inputs.payloadPower_W}
-        min={1}
-        max={2000}
-        step={1}
-        log
-        display={`${sig(inputs.payloadPower_W, 2)} W`}
-        onChange={(v) => set({ payloadPower_W: round2(v) })}
-      />
+      {asBuilt ? (
+        <>
+          <Slider
+            {...info('asBuiltMass')}
+            label="Dry mass"
+            value={inputs.asBuilt.dryMass_kg}
+            min={1}
+            max={500000}
+            step={1}
+            log
+            display={`${sig(inputs.asBuilt.dryMass_kg, 3)} kg`}
+            onChange={(v) => set({ asBuilt: { ...inputs.asBuilt, dryMass_kg: round2(v) } })}
+          />
+          <Slider
+            {...info('asBuiltArea')}
+            label="Drag area"
+            value={inputs.asBuilt.dragArea_m2}
+            min={0.005}
+            max={2000}
+            step={0.001}
+            log
+            display={`${sig(inputs.asBuilt.dragArea_m2, 2)} m²`}
+            onChange={(v) => set({ asBuilt: { ...inputs.asBuilt, dragArea_m2: round2(v) } })}
+          />
+        </>
+      ) : (
+        <>
+        <Slider
+          {...info('payloadMass')}
+          label="Payload mass"
+          value={inputs.payloadMass_kg}
+          min={1}
+          max={500}
+          step={1}
+          log
+          display={`${sig(inputs.payloadMass_kg, 2)} kg`}
+          onChange={(v) => set({ payloadMass_kg: round2(v) })}
+        />
+        <Slider
+          {...info('payloadPower')}
+          label="Payload power"
+          value={inputs.payloadPower_W}
+          min={1}
+          max={2000}
+          step={1}
+          log
+          display={`${sig(inputs.payloadPower_W, 2)} W`}
+          onChange={(v) => set({ payloadPower_W: round2(v) })}
+        />
+        </>
+      )}
       <Slider
         {...info('cd')}
         label="Drag coefficient C_D"
         value={inputs.cd}
         min={2}
-        max={2.8}
+        max={4}
         step={0.05}
         display={inputs.cd.toFixed(2)}
         onChange={(v) => set({ cd: v })}
       />
-      <Segmented
-        {...info('arrays')}
-        label="Solar arrays"
-        value={inputs.arrayOrientation}
-        options={[
-          { value: 'edgeOn', label: 'Edge-on to flow' },
-          { value: 'sunTracking', label: 'Sun-tracking' },
-        ]}
-        onChange={(v) => set({ arrayOrientation: v })}
-      />
+      {!asBuilt && (
+        <>
+        <Segmented
+          {...info('arrays')}
+          label="Solar arrays"
+          value={inputs.arrayOrientation}
+          options={[
+            { value: 'edgeOn', label: 'Edge-on to flow' },
+            { value: 'sunTracking', label: 'Sun-tracking' },
+          ]}
+          onChange={(v) => set({ arrayOrientation: v })}
+        />
+        </>
+      )}
 
       <h2>Propulsion</h2>
       <div className={`control${openInfo === 'technology' ? ' info-open' : ''}`}>
@@ -238,6 +290,19 @@ export function Controls({ inputs, set, openInfo, setOpenInfo }: ControlsProps) 
           ))}
         </select>
       </div>
+      {asBuilt && (
+        <Slider
+          {...info('maxThrust')}
+          label="Maximum thrust"
+          value={Math.max(inputs.asBuilt.maxThrust_N * 1e3, 0.01)}
+          min={0.01}
+          max={1000}
+          step={0.01}
+          log
+          display={inputs.asBuilt.maxThrust_N > 0 ? `${sig(inputs.asBuilt.maxThrust_N * 1e3, 2)} mN` : 'none'}
+          onChange={(v) => set({ asBuilt: { ...inputs.asBuilt, maxThrust_N: v <= 0.0105 ? 0 : round2(v) / 1e3 } })}
+        />
+      )}
       <Slider
         {...info('isp')}
         label="Specific impulse"

@@ -9,15 +9,29 @@ import {
   type DensityFn,
   type SolarConditions,
 } from './atmosphere'
-import { G0, SOLAR_CONSTANT, YEAR_S } from './constants'
+import { DAY_S, G0, MU, SOLAR_CONSTANT, YEAR_S } from './constants'
 import { ballisticCoefficient_kg_m2, decayIntegralTable, drag_N } from './drag'
-import { circularSpeed_m_s, period_s } from './orbit'
+import { circularSpeed_m_s, period_s, radius_m } from './orbit'
 import { eclipseFraction, loopGain } from './power'
 import { electricPower_W, PROPULSION_PRESETS, type PropulsionClass } from './propulsion'
 
 export type ArrayOrientation = 'edgeOn' | 'sunTracking'
 
+export type DesignMode = 'design' | 'asBuilt'
+
+/** A spacecraft that already exists: mass, drag area and thrust are fixed, not sized. */
+export interface AsBuiltSpacecraft {
+  dryMass_kg: number
+  /** Effective ram-facing area including arrays, to use with C_D. */
+  dragArea_m2: number
+  /** Maximum thrust available for drag makeup; 0 for a spacecraft with no usable propulsion. */
+  maxThrust_N: number
+}
+
 export interface SatelliteInputs {
+  /** Design: the sizing loop builds the spacecraft. As built: it is given, and the model checks it. */
+  mode: DesignMode
+  asBuilt: AsBuiltSpacecraft
   altitude_m: number
   inclination_deg: number
   /** Sun angle to the orbit plane; 0 is the worst case for eclipse. */
@@ -69,6 +83,8 @@ const X_ECLIPSE = 0.6
 const X_DAYLIGHT = 0.8
 
 export const DEFAULT_INPUTS: SatelliteInputs = {
+  mode: 'design',
+  asBuilt: { dryMass_kg: 100, dragArea_m2: 0.5, maxThrust_N: 5e-3 },
   altitude_m: 300e3,
   inclination_deg: 53,
   beta_deg: 0,
@@ -101,7 +117,7 @@ export const DEFAULT_INPUTS: SatelliteInputs = {
   designLife_s: 5 * YEAR_S,
 }
 
-export type Infeasibility = 'loopDiverged' | 'loopNotConverged' | null
+export type Infeasibility = 'loopDiverged' | 'loopNotConverged' | 'thrustBelowDrag' | null
 
 export interface SatelliteResult {
   feasible: boolean
@@ -125,8 +141,10 @@ export interface SatelliteResult {
 
   drag_N: number
   stormDrag_N: number
-  /** Thrust while firing, sized for the storm-margin drag. */
+  /** Thrust while firing: sized for storm-margin drag (design) or the thruster's maximum (as built). */
   sizedThrust_N: number
+  /** Available thrust ÷ thrust needed to hold altitude at nominal density. */
+  thrustMargin: number
   thrusterUnits: number
   thrusterPower_W: number
   arrayPower_W: number
@@ -140,6 +158,8 @@ export interface SatelliteResult {
   lifeLimitedBy: 'propellant' | 'totalImpulse' | 'designLife'
   /** Decay time with no thrust, at launch mass. */
   naturalLifetime_s: number
+  /** Altitude loss per day with no thrust, at launch mass. */
+  decayRate_m_day: number
   /** Decay time with no thrust after the propellant is gone (dry mass) — disposal. */
   disposalTime_s: number
   meetsFiveYearRule: boolean
@@ -176,6 +196,85 @@ const DAMPING = 0.5
 const MAX_DRY_MASS_KG = 1e5
 
 export function evaluateSatellite(inputs: SatelliteInputs): SatelliteResult {
+  return inputs.mode === 'asBuilt' ? evaluateAsBuilt(inputs) : evaluateDesign(inputs)
+}
+
+/** Results shared by both modes, given the spacecraft's mass and drag area. */
+function lifeAndEnvironment(inputs: SatelliteInputs, dryMass: number, dragArea: number) {
+  const h = inputs.altitude_m
+  const density = densityFunction(inputs)
+  const rho = density(h)
+  const v = circularSpeed_m_s(h)
+  const wetMass = dryMass + inputs.propellant_kg
+  const drag = drag_N(rho, v, inputs.cd, dragArea)
+  const ballistic = ballisticCoefficient_kg_m2(wetMass, inputs.cd, dragArea)
+  const propPerSecond = drag / (G0 * inputs.isp_s)
+  const propellantLife = inputs.propellant_kg / propPerSecond
+  const impulseLife = inputs.totalImpulse_Ns / drag
+  const missionLife = Math.min(propellantLife, impulseLife, inputs.designLife_s)
+  const lifeLimitedBy: SatelliteResult['lifeLimitedBy'] =
+    missionLife === inputs.designLife_s ? 'designLife' : missionLife === propellantLife ? 'propellant' : 'totalImpulse'
+  const decay = decayIntegral(inputs)(h)
+  const disposalTime = ballisticCoefficient_kg_m2(dryMass, inputs.cd, dragArea) * decay
+  const oxygen = inputs.atmosphereModel === 'msis' ? msisOxygen_m3(h, inputs.solar, inputs.inclination_deg) : NaN
+  return {
+    speed_m_s: v,
+    period_s: period_s(h),
+    density_kg_m3: rho,
+    scaleHeight_m: scaleHeight_m(density, h),
+    oxygen_m3: oxygen,
+    dryMass_kg: dryMass,
+    wetMass_kg: wetMass,
+    dragArea_m2: dragArea,
+    ballistic_kg_m2: ballistic,
+    drag_N: drag,
+    stormDrag_N: drag * inputs.stormMargin,
+    deltaVPerYear_m_s: (drag / wetMass) * YEAR_S,
+    propellantPerYear_kg: propPerSecond * YEAR_S,
+    propellantLife_s: propellantLife,
+    impulseLife_s: impulseLife,
+    missionLife,
+    lifeLimitedBy,
+    naturalLifetime_s: ballistic * decay,
+    decayRate_m_day: ((Math.sqrt(MU * radius_m(h)) * rho) / ballistic) * DAY_S,
+    disposalTime_s: disposalTime,
+    meetsFiveYearRule: disposalTime <= 5 * YEAR_S,
+    heatFlux_W_m2: 0.5 * rho * v ** 3,
+    oxygenFluencePerYear_m2: oxygen * v * YEAR_S,
+  }
+}
+
+function evaluateAsBuilt(inputs: SatelliteInputs): SatelliteResult {
+  const { dryMass_kg, dragArea_m2, maxThrust_N } = inputs.asBuilt
+  const fe = eclipseFraction(inputs.altitude_m, inputs.beta_deg)
+  const duty = inputs.thrustInEclipse ? 1 : 1 - fe
+  const preset = PROPULSION_PRESETS[inputs.propulsion]
+  const common = lifeAndEnvironment(inputs, dryMass_kg, dragArea_m2)
+  const thrustMargin = (maxThrust_N * duty) / common.drag_N
+  const holds = thrustMargin >= 1
+  return {
+    ...common,
+    feasible: holds,
+    infeasibility: holds ? null : 'thrustBelowDrag',
+    iterations: 0,
+    eclipseFraction: fe,
+    duty,
+    bodyFrontalArea_m2: dragArea_m2,
+    arrayArea_m2: NaN,
+    sizedThrust_N: maxThrust_N,
+    thrustMargin,
+    thrusterUnits: NaN,
+    thrusterPower_W:
+      preset.efficiency !== null
+        ? electricPower_W(common.drag_N / duty, inputs.isp_s, inputs.efficiency)
+        : preset.fixedPower_W,
+    arrayPower_W: NaN,
+    loopGain: NaN,
+    missionLife_s: holds ? common.missionLife : 0,
+  }
+}
+
+function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
   const h = inputs.altitude_m
   const density = densityFunction(inputs)
   const rho = density(h)
@@ -244,60 +343,29 @@ export function evaluateSatellite(inputs: SatelliteInputs): SatelliteResult {
   }
 
   const bodyFrontal = bodyArea(dryMass)
-  const dragArea = bodyFrontal + kArray * arrayArea
-  const wetMass = dryMass + inputs.propellant_kg
-  const drag = drag_N(rho, v, inputs.cd, dragArea)
+  const common = lifeAndEnvironment(inputs, dryMass, bodyFrontal + kArray * arrayArea)
   const sizedThrust = stormDrag / duty
-  const ballistic = ballisticCoefficient_kg_m2(wetMass, inputs.cd, dragArea)
-  const propPerSecond = drag / (G0 * inputs.isp_s)
-  const propellantLife = inputs.propellant_kg / propPerSecond
-  const impulseLife = inputs.totalImpulse_Ns / drag
-  const missionLife = Math.min(propellantLife, impulseLife, inputs.designLife_s)
-  const lifeLimitedBy =
-    missionLife === inputs.designLife_s ? 'designLife' : missionLife === propellantLife ? 'propellant' : 'totalImpulse'
-  const decay = decayIntegral(inputs)(h)
-  const naturalLifetime = ballistic * decay
-  const disposalTime = ballisticCoefficient_kg_m2(dryMass, inputs.cd, dragArea) * decay
-  const oxygen = inputs.atmosphereModel === 'msis' ? msisOxygen_m3(h, inputs.solar, inputs.inclination_deg) : NaN
   const feasible = converged && !diverged
 
   return {
+    ...common,
     feasible,
     infeasibility: diverged ? 'loopDiverged' : converged ? null : 'loopNotConverged',
     iterations,
-    speed_m_s: v,
-    period_s: T,
-    density_kg_m3: rho,
-    scaleHeight_m: scaleHeight_m(density, h),
-    oxygen_m3: oxygen,
     eclipseFraction: fe,
     duty,
-    dryMass_kg: dryMass,
-    wetMass_kg: wetMass,
     bodyFrontalArea_m2: bodyFrontal,
     arrayArea_m2: arrayArea,
-    dragArea_m2: dragArea,
-    ballistic_kg_m2: ballistic,
-    drag_N: drag,
     stormDrag_N: stormDrag,
     sizedThrust_N: sizedThrust,
+    thrustMargin: (sizedThrust * duty) / common.drag_N,
     thrusterUnits: Math.ceil(sizedThrust / preset.unitThrust_N),
     thrusterPower_W: thrusterPower,
     arrayPower_W: arrayArea * arrayPowerPerArea,
     loopGain: electric
       ? loopGain(rho * inputs.stormMargin, v, inputs.cd, kArray, inputs.isp_s, inputs.efficiency, duty, arrayPowerPerArea / powerPathFactor)
       : 0,
-    deltaVPerYear_m_s: (drag / wetMass) * YEAR_S,
-    propellantPerYear_kg: propPerSecond * YEAR_S,
-    propellantLife_s: propellantLife,
-    impulseLife_s: impulseLife,
-    missionLife_s: feasible ? missionLife : 0,
-    lifeLimitedBy,
-    naturalLifetime_s: naturalLifetime,
-    disposalTime_s: disposalTime,
-    meetsFiveYearRule: disposalTime <= 5 * YEAR_S,
-    heatFlux_W_m2: 0.5 * rho * v ** 3,
-    oxygenFluencePerYear_m2: oxygen * v * YEAR_S,
+    missionLife_s: feasible ? common.missionLife : 0,
   }
 }
 
