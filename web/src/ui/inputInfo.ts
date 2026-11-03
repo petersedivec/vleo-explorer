@@ -32,6 +32,13 @@ export type InfoKey =
   | 'asBuiltMass'
   | 'asBuiltArea'
   | 'maxThrust'
+  | 'coverage'
+  | 'offNadir'
+  | 'revisit'
+  | 'passes'
+  | 'minElevation'
+  | 'latitudeMax'
+  | 'payloadExponent'
 
 export const INPUT_INFO: Record<InfoKey, InputInfo> = {
   altitude: {
@@ -223,5 +230,62 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     drives: ['Thrust margin: available thrust ÷ drag', 'Whether the spacecraft can hold altitude at all'],
     insight: 'Below a margin of 1 the spacecraft cannot hold altitude. Above 1 but close to it, a storm or a rising solar cycle can push it under.',
     affects: ['thrustMargin', 'missionLife'],
+  },
+  coverage: {
+    title: 'Coverage type',
+    what: 'Revisit: a satellite must pass over each place every so often (imaging, radar). Continuous: at least one satellite must always be in view (communications, direct-to-device).',
+    typical: 'Imaging constellations: revisit of hours to a day. Broadband and direct-to-device: continuous.',
+    drives: ['Satellites needed: about 1/h for revisit, about 1/h² for continuous coverage'],
+    insight: 'Continuous coverage costs far more satellites, and its satellite count falls much faster with altitude — which pushes communications constellations higher than imaging ones.',
+    reference: 'Wertz et al., SMAD, ch. 9 (coverage)',
+    affects: [],
+  },
+  offNadir: {
+    title: 'Maximum off-nadir angle',
+    what: 'How far from straight down the sensor can point. Together with altitude it sets the width of ground a satellite can image on each pass (its field of regard).',
+    typical: '15–30° for high-resolution optical; up to 45° with agile pointing; radar typically looks 20–50° off nadir.',
+    drives: ['Swath width, roughly in proportion to altitude', 'Satellites needed for a revisit time, inversely'],
+    insight: 'Pointing further off nadir buys coverage but worsens resolution (longer slant range, oblique view). Lower orbits need wider angles for the same swath.',
+    affects: [],
+  },
+  revisit: {
+    title: 'Revisit time',
+    what: 'The longest acceptable gap between looks at a point on the equator. Higher latitudes are revisited more often.',
+    typical: 'Daily for mapping; a few hours for monitoring; under an hour for tactical needs.',
+    drives: ['Satellites needed, inversely: halve the revisit time, double the satellites'],
+    insight: 'Revisit is usually what sizes an imaging constellation, not resolution.',
+    affects: [],
+  },
+  passes: {
+    title: 'Usable passes per orbit',
+    what: 'A satellite crosses the equator twice per orbit. Optical sensors in sun-synchronous orbits can use only the daylight crossing; radar works day and night.',
+    typical: 'Optical: 1. Radar and radio-frequency sensing: 2.',
+    drives: ['Satellites needed for a revisit time, inversely'],
+    insight: 'One reason radar constellations need fewer satellites for the same revisit.',
+    affects: [],
+  },
+  minElevation: {
+    title: 'Minimum user elevation',
+    what: 'How high above a user’s horizon a satellite must be to provide service. Lower elevations widen each satellite’s footprint but lengthen the radio path and add obstruction by terrain and buildings.',
+    typical: '25–40° for broadband and phones; 10° for ground stations.',
+    drives: ['Footprint size', 'Satellites needed for continuous coverage, roughly inversely with footprint area'],
+    insight: 'In VLEO the footprint at a sensible elevation is small: thousands of satellites for global continuous coverage.',
+    affects: [],
+  },
+  latitudeMax: {
+    title: 'Highest latitude to cover',
+    what: 'Continuous coverage is required from the equator up to this latitude, north and south.',
+    typical: '±53–60° covers most of the world’s population; ±90° is truly global.',
+    drives: ['Area to cover (proportional to the sine of the latitude)', 'Satellites needed'],
+    insight: 'Skipping the poles saves satellites; inclination must be at least this latitude.',
+    affects: [],
+  },
+  payloadExponent: {
+    title: 'Payload growth with altitude',
+    what: 'To keep the same performance on the ground, payloads get bigger as you fly higher: payload mass and power ∝ (h / 300 km)^k. The Explore payload is defined at 300 km.',
+    typical: 'k ≈ 2.5 for an optical telescope at fixed resolution (aperture ∝ h, mass ∝ aperture^2.5). k ≈ 2 for a direct-to-device antenna at fixed link margin (area ∝ h²). k = 0 keeps the payload fixed.',
+    drives: ['Satellite mass and power at each altitude', 'The right-hand wall of the mass-per-year curve'],
+    insight: 'This is what makes going higher expensive. Without it, higher is always better; with it, an optimum altitude appears. v2 will size payloads from real requirements instead.',
+    affects: [],
   },
 }

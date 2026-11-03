@@ -33,9 +33,18 @@ export function Chart({ data, layout, height = 380 }: ChartProps) {
       const text = cssVar('--text')
       const grid = cssVar('--grid')
       const axis = { gridcolor: grid, zerolinecolor: grid, linecolor: grid, color: text }
-      const xaxis = { ...axis, ...((layout.xaxis as object) ?? {}) }
-      const yaxis = { ...axis, ...((layout.yaxis as object) ?? {}) }
-      const yaxis2 = layout.yaxis2 ? { ...axis, ...(layout.yaxis2 as object) } : undefined
+      // Log axes without explicit ticks: label decades only (Plotly's 2/5 minor labels read as bare digits).
+      const withAxis = (spec?: object) => {
+        const merged: Record<string, unknown> = { ...axis, ...(spec ?? {}) }
+        if (merged.type === 'log' && !merged.tickvals && merged.dtick === undefined) {
+          merged.dtick = 1
+          merged.minor = { showgrid: true, gridcolor: grid, griddash: 'dot' }
+        }
+        return merged
+      }
+      const xaxis = withAxis(layout.xaxis as object)
+      const yaxis = withAxis(layout.yaxis as object)
+      const yaxis2 = layout.yaxis2 ? withAxis(layout.yaxis2 as object) : undefined
       Plotly.react(
         el,
         data,

@@ -361,29 +361,6 @@ footer {
   font-weight: 600;
 }
 
-.coming-soon {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px 20px;
-  max-width: 75ch;
-}
-
-.coming-soon h2 {
-  margin-top: 0;
-  font-size: 1.15rem;
-}
-
-.badge {
-  font-size: 0.75rem;
-  font-weight: 600;
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-radius: 999px;
-  padding: 2px 8px;
-  vertical-align: middle;
-}
-
 /* ── Input info pop-ups ───────────────────────────────────────────────── */
 
 .control {
@@ -839,4 +816,13 @@ table.params td:last-child a {
 
 table.params thead th.no-caps {
   text-transform: none;
+}
+
+/* ── Constellation ────────────────────────────────────────────────────── */
+
+.warn-note {
+  background: var(--warn-bg);
+  border-radius: 6px;
+  padding: 6px 8px;
+  color: var(--text);
 }

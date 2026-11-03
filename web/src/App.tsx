@@ -8,6 +8,7 @@ import { KM } from './ui/common'
 import { Controls } from './ui/Controls'
 import { ExploreCharts } from './ui/ExploreCharts'
 import { duration, sig } from './ui/format'
+import { Constellation } from './ui/Constellation'
 import { Heritage } from './ui/Heritage'
 import { PropulsionTrade } from './ui/PropulsionTrade'
 import { INPUT_INFO, type InfoKey } from './ui/inputInfo'
@@ -87,17 +88,6 @@ function Explore({ inputs, set, loaded, onShowMission }: ExploreProps) {
   )
 }
 
-function ComingSoon({ title, release, children }: { title: string; release: string; children: React.ReactNode }) {
-  return (
-    <section className="coming-soon">
-      <h2>
-        {title} <span className="badge">{release}</span>
-      </h2>
-      {children}
-    </section>
-  )
-}
-
 export default function App() {
   const [inputs, setInputs] = useState<SatelliteInputs>(() => decodeInputs(window.location.hash))
   const [tab, setTab] = useState<Tab>(tabFromHash)
@@ -162,20 +152,7 @@ export default function App() {
       )}
       {tab === 'heritage' && <Heritage selectedId={missionId} onSelect={setMissionId} onLoad={loadMission} />}
       {tab === 'propulsion' && <PropulsionTrade inputs={inputs} set={set} onEditSpacecraft={() => setTab('explore')} />}
-      {tab === 'constellation' && (
-        <ComingSoon title="Constellation" release="v1.4">
-          <p>
-            From one satellite to many. Using the satellite you design in Explore and a coverage requirement, this page
-            will show:
-          </p>
-          <ul>
-            <li>Footprint and swath width vs altitude, from the sensor’s off-nadir angle or the user’s minimum elevation.</li>
-            <li>Satellites needed: roughly 1/h for imaging revisit, roughly 1/h² for continuous coverage.</li>
-            <li>Replacement rate: satellites needed ÷ mission life.</li>
-            <li>Mass to orbit per year to sustain the constellation — a technical stand-in for cost — and the optimum altitude.</li>
-          </ul>
-        </ComingSoon>
-      )}
+      {tab === 'constellation' && <Constellation inputs={inputs} set={set} onEditSpacecraft={() => setTab('explore')} />}
 
       <footer>
         Academic, vendor-neutral teaching tool. Physics and references:{' '}

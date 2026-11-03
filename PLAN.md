@@ -278,9 +278,9 @@ vleo-explorer/
 | 2 | — | Web skeleton, TS physics core, CI, Pages deploy | TS passes golden vectors; site live |
 | 3 | **v1.0** ✅ | Explore, altitude trade curves, explanation cards, solar bands, closed sizing loop, infeasible regions | Student can answer "why" for every number |
 | 3a | **v1.1** ✅ | Info pop-ups on every input (what it is, typical values, what it drives, design insight, reference; highlights affected results); tab layout: Explore / Propulsion trade / Heritage missions | Every input explained in place, on desktop and phone |
-| 3b | **v1.2** ✅ | As-built mode (fixed mass, area, power, thruster) alongside Design mode; heritage missions — GOCE, SLATS, CHAMP, SOAR, Starlink Feb 2022 storm batch, Albedo Clarity-1, ISS — each with sourced parameters (published vs estimated) and real outcome vs model | Each heritage mission loads and its outcome is compared with the model |
+| 3b | **v1.2** ✅ | As-built mode (fixed mass, area, power, thruster) alongside Design mode; heritage missions — GOCE, SLATS, CHAMP, SOAR, Starlink Feb 2022 storm batch, Albedo Clarity-1 — each with sourced parameters (published vs estimated) and real outcome vs model | Each heritage mission loads and its outcome is compared with the model |
 | 3c | **v1.3** ✅ | Propulsion trade page (technical, no cost): tank mass per technology; optimal-Isp curve; "winner map" (altitude × life, size or power); life vs altitude per technology; comparison table | Shows which technology does the mission best where, on a fair basis |
-| 3d | **v1.4** | Constellation tab (technical, no cost): coverage type (revisit or continuous), off-nadir or minimum-elevation angle, latitude band; footprint and swath, analytic satellites needed (~1/h revisit, ~1/h² continuous), replacement rate, **mass to orbit per year** to sustain the constellation vs altitude, optimum altitude | U-curve of mass to orbit per year with the optimum marked |
+| 3d | **v1.4** ✅ | Constellation tab (technical, no cost): coverage type (revisit or continuous), off-nadir or minimum-elevation angle, latitude band; footprint and swath, analytic satellites needed (~1/h revisit, ~1/h² continuous), replacement rate, **mass to orbit per year** to sustain the constellation vs altitude, optimum altitude | U-curve of mass to orbit per year with the optimum marked |
 | 4 | **v1** | Three missions; analytic satellite counts; simple cost model; **U-curve**; tornado chart | Headline chart works for all three missions |
 | 5 | **v2** | Coverage simulator, 2D map, downlink, deployment, Monte Carlo | Analytic counts verified by simulation |
 | 6 | **v3** | Optimizer / Pareto; globe; interactive cause → effect graph; air-breathing what-if | Feature-complete |
@@ -323,6 +323,8 @@ No existing tool combines VLEO focus + propulsion/power/life coupling + constell
 | Oct 2026 | Charts: Plotly.js cartesian partial bundle, lazy-loaded |
 | Nov 2026 | v1.0 live on GitHub Pages; single-satellite depth (v1.1–v1.3) comes before missions and cost |
 | Nov 2026 | Heritage missions include commercial cases (Starlink storm batch, Albedo Clarity-1) alongside government and academic missions |
+| Nov 2026 | v1.4 adds payload growth with altitude, (h/300 km)^k, as the right wall of the mass-per-year curve until v2 requirement-based payload sizing |
+| Nov 2026 | ISS removed from heritage missions: too large, and relies on visiting vehicles for reboost rather than its own drag makeup |
 | Nov 2026 | Tab order: Explore, Heritage missions, Propulsion trade, Constellation |
 | Nov 2026 | Corrected presets to published thrust-to-power: electrospray η 0.35 (≈48 µN/W), RF plasma η 0.15 (≈38 µN/W); added per-technology tank fraction and fixed system mass (teaching estimates) |
 | Nov 2026 | v1.4 constellation tab added before missions and cost; uses mass to orbit per year as a technical proxy for cost |

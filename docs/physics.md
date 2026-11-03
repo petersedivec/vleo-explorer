@@ -427,6 +427,21 @@ streets-of-coverage method and by simulation. Scales ∝ ~1/λ² ∝ ~1/h².
 
 ---
 
+### 10.4 Sustainment and the optimum altitude [v1.4]
+
+- **Payload growth with altitude:** to keep the same ground performance, payload mass and power scale
+  as (h / h_ref)^k, h_ref = 300 km (where the Explore payload is defined). Teaching defaults: k = 2.5
+  for optical imaging at fixed resolution (aperture ∝ h, mass ∝ aperture^~2.5); k = 2 for a
+  direct-to-device antenna at fixed link margin (area ∝ h²); k = 0 keeps the payload fixed. Design mode
+  only; v2 replaces this with requirement-based payload sizing (§9).
+- At each altitude the satellite is sized by the closed loop (§7) with the scaled payload; its mission
+  life is min(propellant, total impulse, design life) (§5.6).
+- **Replacement rate** = N / t_life. **Mass to orbit per year** = replacement rate × wet mass
+  (steady state; excludes launch-vehicle adapters and dispensers). **Deployment mass** = N × wet mass.
+- **Optimum altitude** = minimum of mass to orbit per year over feasible altitudes. Left wall: drag
+  (short lives, larger power systems, no closure). Right wall: payload growth. For continuous coverage
+  with k = 2, footprint area (∝ ~h²) cancels payload growth and the optimum moves to the top of the range.
+
 ## 11. Cost [draft — v1 phase 4]
 
 All parameters are low–high ranges (teaching assumptions); outputs shown as bands, rounded
