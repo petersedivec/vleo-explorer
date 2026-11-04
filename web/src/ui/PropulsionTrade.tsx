@@ -58,7 +58,7 @@ interface Props {
   inputs: SatelliteInputs
   set: (patch: Partial<SatelliteInputs>) => void
   onEditSpacecraft: () => void
-  onLearn: (tech: string) => void
+  onLearn: (tech: string | null) => void
 }
 
 function NumberSlider(props: {
@@ -350,6 +350,13 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft, onLearn }: Prop
             Explore’s Design mode.
           </div>
         )}
+        <p className="page-note">
+          New to these technologies?{' '}
+          <button type="button" className="link" onClick={() => onLearn(null)}>
+            Read the Propulsion 101 Overview for VLEO
+          </button>
+          , or click any technology name in the table.
+        </p>
         <div className="summary">
           <div className="summary-card">
             <span className="card-label">

@@ -22,7 +22,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'heritage', label: 'Heritage missions' },
   { id: 'explore', label: 'Explore' },
-  { id: 'propulsion101', label: 'Propulsion 101' },
   { id: 'propulsion', label: 'Propulsion trade' },
   { id: 'constellation', label: 'Constellation' },
 ]
@@ -32,7 +31,7 @@ const hashParams = () => new URLSearchParams(window.location.hash.replace(/^#/, 
 function tabFromHash(): Tab {
   const params = hashParams()
   const tab = params.get('tab')
-  if (TABS.some((t) => t.id === tab)) return tab as Tab
+  if (TABS.some((t) => t.id === tab) || tab === 'propulsion101') return tab as Tab
   // Links made before the Overview existed carried settings without a tab: they meant Explore.
   return params.has('v') ? 'explore' : 'overview'
 }
@@ -111,15 +110,18 @@ export default function App() {
   const [loadedId, setLoadedId] = useState<string | null>(() => (hashParams().get('loaded') ? missionFromHash() : null))
   const set = (patch: Partial<SatelliteInputs>) => setInputs((prev) => ({ ...prev, ...patch }))
   const loaded = HERITAGE_MISSIONS.find((m) => m.id === loadedId) ?? null
-  // Technology to scroll to on the Propulsion 101 tab.
+  // Propulsion 101 is a sub-page reached by links: remember where the reader came from.
   const [learnTech, setLearnTech] = useState<string | null>(null)
+  const [returnTab, setReturnTab] = useState<Tab>('overview')
   const goTo = (t: Tab) => {
     setTab(t)
     window.scrollTo({ top: 0 })
   }
-  const learnAbout = (tech: string) => {
+  const learnAbout = (tech: string | null) => {
+    if (tab !== 'propulsion101') setReturnTab(tab)
     setLearnTech(tech)
     setTab('propulsion101')
+    if (!tech) window.scrollTo({ top: 0 })
   }
 
   useEffect(() => {
@@ -169,6 +171,7 @@ export default function App() {
             setTab(t)
             window.scrollTo({ top: 0 })
           }}
+          onLearn={() => learnAbout(null)}
         />
       )}
       {tab === 'explore' && (
@@ -184,7 +187,14 @@ export default function App() {
         />
       )}
       {tab === 'heritage' && <Heritage selectedId={missionId} onSelect={setMissionId} onLoad={loadMission} />}
-      {tab === 'propulsion101' && <Propulsion101 focus={learnTech} onCompare={() => goTo('propulsion')} />}
+      {tab === 'propulsion101' && (
+        <Propulsion101
+          focus={learnTech}
+          backLabel={TABS.find((t) => t.id === returnTab)?.label ?? 'Overview'}
+          onBack={() => goTo(returnTab)}
+          onCompare={() => goTo('propulsion')}
+        />
+      )}
       {tab === 'propulsion' && (
         <PropulsionTrade inputs={inputs} set={set} onEditSpacecraft={() => setTab('explore')} onLearn={learnAbout} />
       )}

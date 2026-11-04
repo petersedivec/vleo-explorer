@@ -1,6 +1,6 @@
 // Propulsion 101 tab: core concepts, an at-a-glance chart, and one card per technology.
 
-import { useEffect } from 'react'
+import { useEffect, type MouseEvent } from 'react'
 import { CONCEPTS, TECH_CARDS, type TechCard } from '../data/propulsion101'
 import { PROPULSION_PRESETS, thrustToPower_N_W } from '../model/propulsion'
 import { Chart } from './Chart'
@@ -80,20 +80,72 @@ function GlanceChart() {
   )
 }
 
-export function Propulsion101({ focus, onCompare }: { focus: string | null; onCompare: () => void }) {
+const scrollTo = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+interface Props {
+  focus: string | null
+  backLabel: string
+  onBack: () => void
+  onCompare: () => void
+}
+
+export function Propulsion101({ focus, backLabel, onBack, onCompare }: Props) {
   useEffect(() => {
-    if (focus) document.getElementById(`tech-${focus}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (focus) scrollTo(`tech-${focus}`)
   }, [focus])
+
+  const jump = (id: string) => (e: MouseEvent) => {
+    e.preventDefault()
+    scrollTo(id)
+  }
 
   return (
     <div className="p101">
-      <p className="intro">
-        A primer for readers with a space background who are new to spacecraft propulsion: the handful of ideas that
-        explain every trade in this app, then one card per technology. Numbers on the cards are the ones the model uses.
-      </p>
+      <div className="subpage-head">
+        <button type="button" className="link" onClick={onBack}>
+          ← Back to {backLabel}
+        </button>
+        <h2 id="p101-top">Propulsion 101 Overview for VLEO</h2>
+        <p className="intro">
+          A primer for readers with a space background who are new to spacecraft propulsion: the handful of ideas that
+          explain every trade in this app, a map of the field, then one card per technology. Numbers on the cards are the
+          ones the model uses.
+        </p>
+      </div>
 
-      <section>
-        <h3>The ideas that explain everything</h3>
+      <nav className="contents" aria-label="Contents">
+        <h3>Contents</h3>
+        <ol>
+          <li>
+            <a href="#p101-ideas" onClick={jump('p101-ideas')}>
+              The ideas that explain everything
+            </a>
+          </li>
+          <li>
+            <a href="#p101-glance" onClick={jump('p101-glance')}>
+              The field at a glance
+            </a>
+          </li>
+          <li>
+            <a href="#p101-techs" onClick={jump('p101-techs')}>
+              The technologies
+            </a>
+            <ul>
+              {TECH_CARDS.map((c) => (
+                <li key={c.id}>
+                  <a href={`#tech-${c.id}`} onClick={jump(`tech-${c.id}`)}>
+                    <span className="swatch" style={{ background: CARD_COLOR[c.id] }} />
+                    {c.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </li>
+        </ol>
+      </nav>
+
+      <section id="p101-ideas" className="anchor">
+        <h3>1. The ideas that explain everything</h3>
         <div className="concepts">
           {CONCEPTS.map((c) => (
             <div key={c.title} className="concept">
@@ -105,8 +157,8 @@ export function Propulsion101({ focus, onCompare }: { focus: string | null; onCo
         </div>
       </section>
 
-      <section>
-        <h3>The field at a glance</h3>
+      <section id="p101-glance" className="anchor">
+        <h3>2. The field at a glance</h3>
         <figure className="glance">
           <figcaption>
             Thrust per thruster unit vs specific impulse for small-spacecraft systems (published ranges, NASA Small
@@ -118,23 +170,15 @@ export function Propulsion101({ focus, onCompare }: { focus: string | null; onCo
         </figure>
       </section>
 
-      <section>
-        <h3>The technologies</h3>
-        <nav className="tech-index" aria-label="Technologies">
-          {TECH_CARDS.map((c) => (
-            <a key={c.id} href={`#tech-${c.id}`} onClick={(e) => {
-              e.preventDefault()
-              document.getElementById(`tech-${c.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-            }}>
-              <span className="swatch" style={{ background: CARD_COLOR[c.id] }} />
-              {c.name}
-            </a>
-          ))}
-        </nav>
+      <section id="p101-techs" className="anchor">
+        <h3>3. The technologies</h3>
         <div className="tech-cards">
           {TECH_CARDS.map((c) => (
             <article key={c.id} id={`tech-${c.id}`} className={`tech-card${focus === c.id ? ' focused' : ''}`}>
               <header>
+                <a href="#p101-top" className="to-top" onClick={jump('p101-top')}>
+                  ↑ Contents
+                </a>
                 <h4>
                   <span className="swatch" style={{ background: CARD_COLOR[c.id] }} />
                   {c.name}
@@ -191,9 +235,12 @@ export function Propulsion101({ focus, onCompare }: { focus: string | null; onCo
             </article>
           ))}
         </div>
-        <p>
+        <p className="p101-actions">
           <button type="button" className="primary" onClick={onCompare}>
             Compare them on your mission →
+          </button>
+          <button type="button" className="secondary" onClick={onBack}>
+            ← Back to {backLabel}
           </button>
         </p>
       </section>

@@ -1117,23 +1117,6 @@ button.secondary {
   color: var(--muted);
 }
 
-.tech-index {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  margin-bottom: 12px;
-  font-size: 0.9rem;
-}
-
-.tech-index a {
-  color: var(--text);
-  text-decoration: none;
-}
-
-.tech-index a:hover {
-  color: var(--accent);
-}
-
 .tech-cards {
   display: grid;
   gap: 14px;
@@ -1321,4 +1304,89 @@ button.link.small {
   display: inline-block;
   margin-top: 4px;
   font-size: 0.82rem;
+}
+
+/* ── Propulsion 101 as a sub-page ─────────────────────────────────────── */
+
+.subpage-head h2 {
+  margin: 6px 0 6px;
+  font-size: 1.5rem;
+}
+
+.contents {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 18px;
+}
+
+.contents h3 {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.contents ol {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 4px;
+}
+
+.contents ul {
+  list-style: none;
+  padding: 4px 0 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 0.9rem;
+}
+
+.contents a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.contents a:hover {
+  text-decoration: underline;
+}
+
+.contents ul a {
+  color: var(--text);
+}
+
+.anchor,
+#p101-top {
+  scroll-margin-top: 12px;
+}
+
+.tech-card header {
+  position: relative;
+}
+
+.to-top {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.p101-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.page-note {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+}
+
+button.link.strong {
+  font-weight: 600;
 }

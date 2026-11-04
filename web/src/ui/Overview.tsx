@@ -68,11 +68,6 @@ const FLOW: { tab: TabId; title: string; text: string }[] = [
     text: 'Design a single satellite or load a real one. Altitude, solar activity, payload, arrays and propulsion set here are shared with the tabs that follow.',
   },
   {
-    tab: 'propulsion101',
-    title: 'Propulsion 101',
-    text: 'New to spacecraft propulsion? The few ideas that explain every trade, a map of the field, and a card for each technology with a simple diagram.',
-  },
-  {
     tab: 'propulsion',
     title: 'Propulsion trade',
     text: 'The same satellite with each propulsion technology, compared fairly: which one does the mission with the least mass, and where?',
@@ -189,7 +184,7 @@ function PropulsionAssumptions() {
   )
 }
 
-export function Overview({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
+export function Overview({ onNavigate, onLearn }: { onNavigate: (tab: TabId) => void; onLearn: () => void }) {
   return (
     <div className="overview">
       <section className="hero">
@@ -248,6 +243,13 @@ export function Overview({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
 
       <section className="reference">
         <h3>Reference</h3>
+        <p>
+          <button type="button" className="link strong" onClick={onLearn}>
+            Propulsion 101 Overview for VLEO
+          </button>{' '}
+          — a primer for readers new to spacecraft propulsion: the key ideas, a map of the field, and a card with a
+          simple diagram for each technology.
+        </p>
         <p>
           The equations, units and references behind every number are in the physics specification:{' '}
           <a href="https://github.com/petersedivec/vleo-explorer/blob/main/docs/physics.md" target="_blank" rel="noreferrer">
