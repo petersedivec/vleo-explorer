@@ -70,6 +70,12 @@ export interface SatelliteInputs {
   thrusterFixedMass_kg: number
   /** Overrides the technology's minimum operating power (used for the generic Isp curve). */
   minPowerOverride_W?: number
+  /** Life the thruster units must survive (wear); defaults to the design life. */
+  impulseCoverLife_s?: number
+  /** Ignore thruster wear: one unit lasts forever (a sensitivity check). */
+  ignoreThrusterWear?: boolean
+  /** A single idealised thruster of any size: no unit count, no wear (the generic Isp curve). */
+  idealThruster?: boolean
   /** If false, the thruster fires in daylight only (duty = 1 - eclipse fraction). */
   thrustInEclipse: boolean
   propellant_kg: number
@@ -108,12 +114,12 @@ export const DEFAULT_INPUTS: SatelliteInputs = {
   packingFactor: 0.85,
   lifeDegradation: 0.85,
   arrayArealMass_kg_m2: 3,
-  propulsion: 'electrospray',
-  isp_s: PROPULSION_PRESETS.electrospray.isp_s,
-  efficiency: PROPULSION_PRESETS.electrospray.efficiency ?? 0.5,
+  propulsion: 'hall',
+  isp_s: PROPULSION_PRESETS.hall.isp_s,
+  efficiency: PROPULSION_PRESETS.hall.efficiency ?? 0.5,
   totalImpulse_Ns: Infinity,
   ppuSpecificMass_kg_W: 0.02,
-  thrusterFixedMass_kg: PROPULSION_PRESETS.electrospray.systemFixedMass_kg,
+  thrusterFixedMass_kg: PROPULSION_PRESETS.hall.systemFixedMass_kg,
   thrustInEclipse: true,
   propellant_kg: 8,
   designLife_s: 5 * YEAR_S,
@@ -327,11 +333,21 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
   let iterations = 0
   let converged = false
   let diverged = false
+  let units = 1
+  const coverLife = inputs.impulseCoverLife_s ?? inputs.designLife_s
+  const wearLimited = !inputs.ignoreThrusterWear && !inputs.idealThruster && Number.isFinite(preset.unitTotalImpulse_Ns)
 
   for (; iterations < MAX_ITERATIONS; iterations++) {
     const dragArea = bodyArea(dryMass) + kArray * arrayArea
     stormDrag = drag_N(rho * inputs.stormMargin, v, inputs.cd, dragArea)
     const fireThrust = stormDrag / duty
+    // Units: enough for the storm-sized thrust, and enough total impulse to cancel nominal drag for the life.
+    const nominalImpulse = (stormDrag / inputs.stormMargin) * coverLife
+    units = inputs.idealThruster ? 1 : Math.max(
+      1,
+      Math.ceil(fireThrust / preset.unitThrust_N - 1e-9),
+      wearLimited && Number.isFinite(coverLife) ? Math.ceil(nominalImpulse / preset.unitTotalImpulse_Ns - 1e-9) : 1,
+    )
     const newThrusterPower = electric
       ? Math.max(electricPower_W(fireThrust, inputs.isp_s, inputs.efficiency), inputs.minPowerOverride_W ?? preset.minPower_W)
       : preset.fixedPower_W
@@ -348,7 +364,8 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
         inputs.busFixedMass_kg +
         inputs.arrayArealMass_kg_m2 * newArrayArea +
         (electric ? inputs.ppuSpecificMass_kg_W * newThrusterPower : 0) +
-        inputs.thrusterFixedMass_kg) /
+        inputs.thrusterFixedMass_kg +
+        (units - 1) * preset.unitMass_kg) /
       (1 - inputs.structureFraction)
 
     if (!Number.isFinite(newDryMass) || newDryMass > MAX_DRY_MASS_KG) {
@@ -366,7 +383,12 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
   }
 
   const bodyFrontal = bodyArea(dryMass)
-  const common = lifeAndEnvironment(inputs, dryMass, bodyFrontal + kArray * arrayArea)
+  const wearImpulse = wearLimited ? units * preset.unitTotalImpulse_Ns : Infinity
+  const common = lifeAndEnvironment(
+    { ...inputs, totalImpulse_Ns: Math.min(inputs.totalImpulse_Ns, wearImpulse) },
+    dryMass,
+    bodyFrontal + kArray * arrayArea,
+  )
   const sizedThrust = stormDrag / duty
   const tooHeavy = converged && dryMass > MASS_GROWTH_LIMIT * dragFreeDryMass
   const feasible = converged && !diverged && !tooHeavy
@@ -391,7 +413,7 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
     stormDrag_N: stormDrag,
     sizedThrust_N: sizedThrust,
     thrustMargin: (sizedThrust * duty) / common.drag_N,
-    thrusterUnits: Math.ceil(sizedThrust / preset.unitThrust_N),
+    thrusterUnits: units,
     thrusterPower_W: thrusterPower,
     arrayPower_W: arrayArea * arrayPowerPerArea,
     loopGain: electric

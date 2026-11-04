@@ -9,8 +9,8 @@ const base = DEFAULT_INPUTS
 describe('propulsion trade', () => {
   it('propellant for a requirement is drag × life / (g0 Isp), plus tank', () => {
     const r = requirementFor(base, 'hall', 300e3, 3 * YEAR_S)
-    const d = designFor(base, 'hall', 300e3)
-    expect(r.propellant_kg).toBeCloseTo((d.drag_N * 3 * YEAR_S) / (9.80665 * 1400), 9)
+    const d = designFor(base, 'hall', 300e3, undefined, {}, 3 * YEAR_S)
+    expect(r.propellant_kg).toBeCloseTo((d.drag_N * 3 * YEAR_S) / (9.80665 * PROPULSION_PRESETS.hall.isp_s), 9)
     expect(r.tank_kg).toBeCloseTo(0.15 * r.propellant_kg, 9)
   })
 
@@ -68,5 +68,28 @@ describe('fairness checks', () => {
     const d = designFor(base, 'electrospray', 450e3, { isp_s: 1500, efficiency: 0.45 })
     expect(d.thrusterPower_W).toBeLessThan(PROPULSION_PRESETS.electrospray.minPower_W)
     expect(curve[0].thrusterPower_W).toBeCloseTo(d.thrusterPower_W, 9)
+  })
+})
+
+describe('thruster wear', () => {
+  it('carries enough units to cover the mission total impulse', () => {
+    const life = 2 * YEAR_S
+    const d = designFor(base, 'electrospray', 350e3, undefined, {}, life)
+    const needed = d.drag_N * life
+    expect(d.thrusterUnits * PROPULSION_PRESETS.electrospray.unitTotalImpulse_Ns).toBeGreaterThanOrEqual(needed * 0.999)
+  })
+
+  it('wear makes long electrospray missions heavier; ignoring wear removes the penalty', () => {
+    const short = requirementFor(base, 'electrospray', 350e3, 0.25 * YEAR_S)
+    const long = requirementFor(base, 'electrospray', 350e3, 5 * YEAR_S)
+    const longNoWear = requirementFor(base, 'electrospray', 350e3, 5 * YEAR_S, { ignoreWear: true })
+    expect(long.dry_kg).toBeGreaterThan(short.dry_kg)
+    expect(longNoWear.dry_kg).toBeLessThan(long.dry_kg)
+  })
+
+  it('equal-budget life is self-consistent with the units it carries', () => {
+    const life = budgetLifeFor(base, 'feep', 350e3, 80)
+    const r = requirementFor(base, 'feep', 350e3, life)
+    expect(r.wet_kg).toBeLessThanOrEqual(80 * 1.001)
   })
 })

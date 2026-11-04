@@ -8,7 +8,6 @@ import {
   budgetLifeFor,
   designFor,
   ispCurve,
-  lifeWithBudget,
   meetRequirement,
   NEUTRAL_FIXED_MASS_KG,
   TECHNOLOGIES,
@@ -43,7 +42,7 @@ const SHORT: Record<PropulsionClass, string> = {
 
 const MAP_ALTITUDES = Array.from({ length: 36 }, (_, k) => (150 + 10 * k) * KM)
 const MAP_LIVES_YR = Array.from({ length: 21 }, (_, k) => 0.1 * 10 ** (k / 10))
-const LIFE_ALTITUDES = Array.from({ length: 71 }, (_, k) => (150 + 5 * k) * KM)
+const LIFE_ALTITUDES = Array.from({ length: 36 }, (_, k) => (150 + 10 * k) * KM)
 const ISPS = Array.from({ length: 45 }, (_, k) => 100 * 10 ** (k / 25))
 
 interface Props {
@@ -91,8 +90,12 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
   const [budget_kg, setBudget] = useState(80)
   const [genericEta, setGenericEta] = useState(0.45)
   const [equalFixedMass, setEqualFixedMass] = useState(false)
-  const deferred = useDeferredValue({ inputs, life_yr, budget_kg, genericEta, equalFixedMass })
-  const options = useMemo(() => ({ equalFixedMass: deferred.equalFixedMass }), [deferred.equalFixedMass])
+  const [ignoreWear, setIgnoreWear] = useState(false)
+  const deferred = useDeferredValue({ inputs, life_yr, budget_kg, genericEta, equalFixedMass, ignoreWear })
+  const options = useMemo(
+    () => ({ equalFixedMass: deferred.equalFixedMass, ignoreWear: deferred.ignoreWear }),
+    [deferred.equalFixedMass, deferred.ignoreWear],
+  )
   const life_s = deferred.life_yr * YEAR_S
   const h = deferred.inputs.altitude_m
 
@@ -100,14 +103,14 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
     () =>
       TECHNOLOGIES.map((tech) => {
         const p = PROPULSION_PRESETS[tech]
-        const design = designFor(deferred.inputs, tech, h, undefined, options)
+        const design = designFor(deferred.inputs, tech, h, undefined, options, life_s)
         const req = meetRequirement(design, p.isp_s, p.tankFraction, life_s)
         return {
           tech,
           preset: p,
           design,
           req,
-          budgetLife: lifeWithBudget(design, p.isp_s, p.tankFraction, deferred.budget_kg),
+          budgetLife: budgetLifeFor(deferred.inputs, tech, h, deferred.budget_kg, options),
         }
       }),
     [deferred.inputs, h, life_s, deferred.budget_kg, options],
@@ -252,9 +255,13 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
           <input type="checkbox" checked={equalFixedMass} onChange={(e) => setEqualFixedMass(e.target.checked)} />
           Give every technology the same fixed system mass ({NEUTRAL_FIXED_MASS_KG} kg)
         </label>
+        <label className="control checkbox">
+          <input type="checkbox" checked={ignoreWear} onChange={(e) => setIgnoreWear(e.target.checked)} />
+          Ignore thruster wear (one unit lasts forever)
+        </label>
         <p className="control-note">
-          Fixed masses, tank fractions and minimum powers are teaching estimates. Toggle this to see how much of each
-          win comes from them.
+          Fixed masses, tank fractions, minimum powers and wear life are estimates. Toggle these to see how much of each
+          win comes from them — for example, how much better electrospray would do if its modules lasted longer.
         </p>
       </aside>
 
@@ -307,6 +314,7 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
                 <th scope="col">Technology</th>
                 <th scope="col">Isp</th>
                 <th scope="col" className="no-caps">µN/W</th>
+                <th scope="col">Thruster units</th>
                 <th scope="col">Thruster power</th>
                 <th scope="col">Arrays</th>
                 <th scope="col">Dry mass</th>
@@ -322,10 +330,11 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
                     <span className="swatch" style={{ background: TECH_COLOR[r.tech] }} />
                     {r.preset.label}
                   </th>
-                  <td>{sig(r.preset.isp_s, 2)} s</td>
+                  <td>{sig(r.preset.isp_s, 3)} s</td>
                   <td>{r.preset.efficiency === null ? '—' : sig(thrustToPower_N_W(r.preset.isp_s, r.preset.efficiency) * 1e6, 2)}</td>
                   {r.req.feasible ? (
                     <>
+                      <td title="Units for thrust and to cover the mission's total impulse (wear)">{r.design.thrusterUnits}</td>
                       <td>{sig(r.req.thrusterPower_W, 2)} W</td>
                       <td>{sig(r.req.arrayArea_m2, 2)} m²</td>
                       <td>{sig(r.req.dry_kg, 3)} kg</td>
@@ -336,7 +345,7 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
                       </td>
                     </>
                   ) : (
-                    <td colSpan={6} className="muted">
+                    <td colSpan={7} className="muted">
                       No design closes at this altitude (sizing-loop gain {sig(r.design.loopGain, 2)})
                     </td>
                   )}
@@ -483,10 +492,12 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
               needs: propellant, tank, thruster hardware, power system and the drag that comes with it.
             </p>
             <p className="muted small">
-              Tank fractions, fixed system masses and minimum operating powers are order-of-magnitude teaching estimates,
-              not vendor data (physics.md §5.7). Not yet modelled: mass per thruster module, thruster wear life (total
-              impulse per unit), efficiency falling off at low power, and battery mass. Where the winner map is faded, or
-              changes when you equalise fixed masses, treat the result as a tie.
+              Isp and efficiency are adjusted to small-satellite power levels from public data; tank fractions, fixed
+              system masses, minimum powers, and wear life per unit are estimates (physics.md §5.7). Thruster wear is
+              modelled simply: enough units are carried to cover the mission’s total impulse, each adding mass.
+              Electrospray’s published module life (about 100 N·s, 2020) is its main limit for long missions and is
+              improving. Not yet modelled: efficiency falling off at low power, and battery mass. Where the winner map is
+              faded, or changes when you toggle the checks, treat the result as a tie.
             </p>
           </figure>
         </div>

@@ -326,6 +326,7 @@ No existing tool combines VLEO focus + propulsion/power/life coupling + constell
 | Nov 2026 | v1.4 adds payload growth with altitude, (h/300 km)^k, as the right wall of the mass-per-year curve until v2 requirement-based payload sizing |
 | Nov 2026 | Overview landing tab added (purpose, quick start, how tabs connect, assumptions, next steps). Tab order: Overview, Heritage missions, Explore, Propulsion trade, Constellation |
 | Nov 2026 | Propulsion estimates reviewed by the author: xenon tank 0.15, krypton tank 0.30 (new krypton Hall class), Hall fixed 2.5 kg, gridded ion fixed 1.5 kg; minimum power Hall 75 W, electrospray 2 W, gridded ion 40 W, RF 20 W. Independent literature check commissioned |
+| Nov 2026 | Efficiencies corrected to small-satellite power levels from a public-data review (ion 0.20, Hall Xe 0.35, Kr 0.26, FEEP 0.15, RF 0.12); simple thruster wear model (units for total impulse) with an "ignore wear" sensitivity switch; RF plasma uses flight-class values (4 kg, 100 W); Explore default thruster changed to Hall (xenon) |
 | Nov 2026 | Extend the Python reference model to the sizing loop (and later constellation and trade) for independent validation and future reuse |
 | Nov 2026 | Add an orbit-type choice (dawn-dusk / noon SSO / other) that sets β automatically — not urgent |
 | Nov 2026 | Overview wording: "Explore VLEO and how propulsion technologies may support it"; cost model moved up the roadmap |

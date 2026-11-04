@@ -139,8 +139,8 @@ export const OUTPUT_GROUPS: OutputGroup[] = [
         label: 'Thruster units',
         value: (r) => sig(r.thrusterUnits, 3),
         raw: (r) => r.thrusterUnits,
-        equation: 'n = ⌈T_sized / T_unit⌉',
-        why: 'Modular thrusters (electrospray, FEEP) scale by adding units.',
+        equation: 'n = max(⌈T_sized / T_unit⌉, ⌈D · life / I_unit⌉)',
+        why: 'Units needed for thrust, and to deliver the mission’s total impulse before they wear out. Modules with short wear life (electrospray today) need many units for multi-year missions.',
       },
       {
         id: 'propPerYear',

@@ -185,22 +185,28 @@ is derived so the three cannot disagree.
 Thrust is not power-limited. Power = fixed heater/valve power P_fixed (teaching default
 10 W for cold gas, 20 W for monoprop), independent of thrust.
 
-### 5.3 Technology presets (generic classes; teaching defaults from NASA SST ranges)
+### 5.3 Technology presets (generic classes, ~50 kg spacecraft, 20–200 W)
 
-| Class | Isp (s) | η | Thrust per unit | Notes |
-|---|---|---|---|---|
-| Cold gas | 65 | — | 10 mN | Not power-limited |
-| Monopropellant (green) | 220 | — | 1 N | Not power-limited |
-| Electrospray (ionic liquid) | 1,500 | 0.35 | 0.1 mN per module | Modular |
-| FEEP | 4,000 | 0.30 | 0.35 mN | Needs neutralizer |
-| Gridded ion | 2,500 | 0.55 | 5 mN | |
-| Hall effect | 1,400 | 0.45 | 15 mN | Highest thrust-to-power |
-| RF / ambipolar plasma | 800 | 0.15 | 5 mN | |
+Small thrusters are much less efficient than kilowatt-class ones, so Isp and η are set to published
+small-satellite values (derived η = T·g₀·Isp / 2P where only thrust, power and Isp are published).
 
-Derived thrust-to-power at these defaults: Hall ≈ 66 µN/W; electrospray ≈ 48 µN/W;
-gridded ion ≈ 45 µN/W; RF plasma ≈ 38 µN/W; FEEP ≈ 15 µN/W. These match published ranges
-(electric propulsion generally below 75 µN/W; electrospray about 30–50 µN/W; Hall about
-60–65 µN/W). Efficiencies were chosen to reproduce these thrust-to-power figures at the preset Isp.
+| Class | Isp (s) | η | Thrust per unit | Thrust-to-power | Basis |
+|---|---|---|---|---|---|
+| Cold gas | 65 | — | 10 mN | — | N₂ 65–71 s; butane 50–69 s |
+| Monopropellant (green) | 220 | — | 1 N | — | AF-M315E ≥ 220 s |
+| Electrospray (ionic liquid) | 1,500 | 0.35 | 0.15 mN per module | ≈ 48 µN/W | Published 40–65 µN/W; ~150 µN per head |
+| FEEP | 3,500 | 0.15 | 0.35 mN | ≈ 9 µN/W | Bus-level ≈ 130 W/mN incl. heater and neutraliser |
+| Gridded ion | 2,200 | 0.20 | 1 mN | ≈ 19 µN/W | 50–75 W systems: ≈ 0.8–1.1 mN at ≈ 2,200 s |
+| Hall (xenon) | 1,200 | 0.35 | 5 mN | ≈ 59 µN/W | η 0.24–0.43 at 100–200 W; ≈ 0.5 at 400 W+ |
+| Hall (krypton) | 1,350 | 0.26 | 4 mN | ≈ 39 µN/W | Kr ≈ 0.6–0.75× Xe efficiency at small scale |
+| RF / ambipolar plasma | 800 | 0.12 | 10 mN | ≈ 31 µN/W | Flight-class units at 300–500 W; many devices ≤ 10% |
+
+Sources (public, Nov 2026): SETS ST-25/ST-40 and SPS-25 data; Busek BHT-200, BIT-3 and BET-300-P
+pages and lifetime test (AIAA 2020-3614); ThrustMe NPT30-I2 (flight 2020); ENPULSION NANO/MICRO
+datasheets and qualification papers; Exotrail ExoMG data; Halo micro Hall (NASA SmallSat ETR);
+MIT ASCENT; HEKT-100 Kr vs Xe (Southampton); U. Michigan PEPL krypton studies; NASA AF-M315E
+(SSC22-X-08); GomSpace NanoProp. Most are manufacturer figures. Efficiency that varies with operating
+power within a technology is not modelled.
 
 ### 5.4 Drag makeup at constant altitude
 
@@ -246,24 +252,31 @@ is the optimal Isp for the mission; it moves with altitude and life.
 **Winner map:** the equal-requirement winner over a grid of altitude × life. The loop is run once per
 technology per altitude (it does not depend on life); propellant is added per life.
 
-Teaching defaults (editable in `web/src/model/propulsion.ts`; order-of-magnitude estimates, not vendor
-data):
+Estimates (editable in `web/src/model/propulsion.ts`), reviewed by the project author and checked
+against public data, Nov 2026:
 
-| Class | Tank fraction f_tank | Fixed system mass (kg) | Minimum power (W) | Why |
-|---|---|---|---|---|
-| Cold gas | 0.6 | 0.5 | — | High-pressure gas needs heavy tanks |
-| Monopropellant | 0.15 | 1.5 | — | Blowdown tank, catalyst bed, valves |
-| Electrospray | 0.08 | 0.5 | 2 | Unpressurised ionic liquid; high-voltage supply floor |
-| FEEP | 0.10 | 0.8 | 5 | Solid metal propellant, integrated reservoir |
-| Gridded ion (xenon) | 0.15 | 1.5 | 40 | Xenon tank, regulator, neutraliser |
-| Hall (xenon) | 0.15 | 2.5 | 75 | Xenon tank, flow control, cathode |
-| Hall (krypton) | 0.30 | 2.5 | 75 | Krypton is less dense: bigger, heavier tank |
-| RF plasma | 0.15 | 2 | 20 | Gas feed; no electrodes |
+| Class | Tank fraction f_tank | Fixed system mass (kg) | Minimum power (W) | Wear life per unit (N·s) | Each extra unit (kg) |
+|---|---|---|---|---|---|
+| Cold gas | 0.6 | 0.5 | — | not limiting | — |
+| Monopropellant | 0.15 | 1.5 | — | not limiting | — |
+| Electrospray | 0.08 | 0.5 | 2 | 100 | 0.2 |
+| FEEP | 0.10 | 0.8 | 10 | 5,000 | 0.9 |
+| Gridded ion | 0.15 | 0.8 | 35 | 5,500 | 1.0 |
+| Hall (xenon) | 0.15 | 2.5 | 75 | 50,000 | 0.7 |
+| Hall (krypton) | 0.30 | 2.5 | 100 | 40,000 | 0.7 |
+| RF plasma | 0.15 | 4 | 100 | not limiting (no electrodes) | — |
 
-Krypton Hall Isp 1,500 s and η 0.40 (≈54 µN/W) are provisional. Tank fractions for xenon (0.15) and
-krypton (0.30), fixed masses for Hall (2.5 kg) and gridded ion (1.5 kg), and minimum powers for
-Hall (75 W), electrospray (2 W), gridded ion (40 W) and RF plasma (20 W) were set by the project author
-(Nov 2026); an independent literature check is in progress.
+Basis: xenon tanks 0.07–0.09 for large tanks, higher for small; krypton stores at about one third of
+xenon's density (0.25–0.45); electrospray ~92 N·s demonstrated per module in a 2020 lifetime test;
+FEEP ~5 kN·s and small ion ~5.5 kN·s per unit; small Hall ~50 kN·s (krypton erodes faster: estimate);
+RF plasma uses the only flight-class product found (300–500 W class, ≈ 7 kg dry), scaled down, rather
+than lab-scale values.
+
+**Thruster wear (simple model).** Units carried n = max(1, ⌈T_sized / T_unit⌉, ⌈D · L / I_unit⌉),
+where L is the life the thrusters must survive (design life in Explore and Constellation; the required
+life in the Propulsion trade). Each unit beyond the first adds its mass inside the sizing loop. Total
+impulse capacity n · I_unit caps mission life. For equal-mass comparisons, the longest life L with units
+sized for L is found by bisection. An "ignore wear" switch removes the limit as a sensitivity check.
 
 Plus PPU mass α_ppu P for electric thrusters (§7).
 
@@ -274,8 +287,7 @@ it and the thruster fires intermittently, so propellant use still follows drag.
 An "equal fixed masses" switch gives every technology the same 2 kg fixed system mass, to show how much
 of each result comes from the estimates; the generic optimal-Isp curve always uses 2 kg.
 
-**Not yet modelled:** mass per thruster module, thruster wear life (total impulse per unit), efficiency
-falling at low power, and battery mass.
+**Not yet modelled:** efficiency that varies with operating power within a technology, and battery mass.
 
 ## 6. Eclipse and power [v1]
 

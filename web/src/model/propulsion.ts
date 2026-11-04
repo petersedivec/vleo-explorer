@@ -35,6 +35,13 @@ export interface PropulsionPreset {
    * so the power system is sized for at least this and the thruster fires intermittently.
    */
   minPower_W: number
+  /**
+   * Total impulse one thruster unit or module can deliver before it wears out (published or estimated,
+   * physics.md §5.7). Infinity where wear is not the limit. More units are carried to cover the mission.
+   */
+  unitTotalImpulse_Ns: number
+  /** Mass of each additional thruster unit or module beyond the first (included in the fixed mass). */
+  unitMass_kg: number
 }
 
 /** Generic technology classes; teaching defaults from NASA SST ranges (§5.3). */
@@ -42,50 +49,42 @@ export const PROPULSION_PRESETS: Record<PropulsionClass, PropulsionPreset> = {
   coldGas: {
     label: 'Cold gas', isp_s: 65, efficiency: null, unitThrust_N: 10e-3, fixedPower_W: 10,
     tankFraction: 0.6, propellant: 'Nitrogen or butane (high-pressure tank)',
-    systemFixedMass_kg: 0.5,
-    minPower_W: 0,
+    systemFixedMass_kg: 0.5, minPower_W: 0, unitTotalImpulse_Ns: Infinity, unitMass_kg: 0,
   },
   monoprop: {
     label: 'Monopropellant (green)', isp_s: 220, efficiency: null, unitThrust_N: 1, fixedPower_W: 20,
     tankFraction: 0.15, propellant: 'Green monopropellant (blowdown tank)',
-    systemFixedMass_kg: 1.5,
-    minPower_W: 0,
+    systemFixedMass_kg: 1.5, minPower_W: 0, unitTotalImpulse_Ns: Infinity, unitMass_kg: 0,
   },
   electrospray: {
-    label: 'Electrospray (ionic liquid)', isp_s: 1500, efficiency: 0.35, unitThrust_N: 0.1e-3, fixedPower_W: 0,
+    label: 'Electrospray (ionic liquid)', isp_s: 1500, efficiency: 0.35, unitThrust_N: 0.15e-3, fixedPower_W: 0,
     tankFraction: 0.08, propellant: 'Ionic liquid (unpressurised)',
-    systemFixedMass_kg: 0.5,
-    minPower_W: 2,
+    systemFixedMass_kg: 0.5, minPower_W: 2, unitTotalImpulse_Ns: 100, unitMass_kg: 0.2,
   },
   feep: {
-    label: 'FEEP', isp_s: 4000, efficiency: 0.3, unitThrust_N: 0.35e-3, fixedPower_W: 0,
+    label: 'FEEP', isp_s: 3500, efficiency: 0.15, unitThrust_N: 0.35e-3, fixedPower_W: 0,
     tankFraction: 0.1, propellant: 'Liquid metal (indium), solid at launch',
-    systemFixedMass_kg: 0.8,
-    minPower_W: 5,
+    systemFixedMass_kg: 0.8, minPower_W: 10, unitTotalImpulse_Ns: 5000, unitMass_kg: 0.9,
   },
   griddedIon: {
-    label: 'Gridded ion', isp_s: 2500, efficiency: 0.55, unitThrust_N: 5e-3, fixedPower_W: 0,
-    tankFraction: 0.15, propellant: 'Xenon (high-pressure tank)',
-    systemFixedMass_kg: 1.5,
-    minPower_W: 40,
+    label: 'Gridded ion', isp_s: 2200, efficiency: 0.2, unitThrust_N: 1e-3, fixedPower_W: 0,
+    tankFraction: 0.15, propellant: 'Xenon or iodine',
+    systemFixedMass_kg: 0.8, minPower_W: 35, unitTotalImpulse_Ns: 5500, unitMass_kg: 1.0,
   },
   hall: {
-    label: 'Hall effect (xenon)', isp_s: 1400, efficiency: 0.45, unitThrust_N: 15e-3, fixedPower_W: 0,
+    label: 'Hall effect (xenon)', isp_s: 1200, efficiency: 0.35, unitThrust_N: 5e-3, fixedPower_W: 0,
     tankFraction: 0.15, propellant: 'Xenon (high-pressure tank)',
-    systemFixedMass_kg: 2.5,
-    minPower_W: 75,
+    systemFixedMass_kg: 2.5, minPower_W: 75, unitTotalImpulse_Ns: 50000, unitMass_kg: 0.7,
   },
   hallKrypton: {
-    label: 'Hall effect (krypton)', isp_s: 1500, efficiency: 0.4, unitThrust_N: 15e-3, fixedPower_W: 0,
+    label: 'Hall effect (krypton)', isp_s: 1350, efficiency: 0.26, unitThrust_N: 4e-3, fixedPower_W: 0,
     tankFraction: 0.3, propellant: 'Krypton (high-pressure tank; less dense than xenon)',
-    systemFixedMass_kg: 2.5,
-    minPower_W: 75,
+    systemFixedMass_kg: 2.5, minPower_W: 100, unitTotalImpulse_Ns: 40000, unitMass_kg: 0.7,
   },
   rfPlasma: {
-    label: 'RF / ambipolar plasma', isp_s: 800, efficiency: 0.15, unitThrust_N: 5e-3, fixedPower_W: 0,
+    label: 'RF / ambipolar plasma', isp_s: 800, efficiency: 0.12, unitThrust_N: 10e-3, fixedPower_W: 0,
     tankFraction: 0.15, propellant: 'Xenon, krypton or iodine',
-    systemFixedMass_kg: 2,
-    minPower_W: 20,
+    systemFixedMass_kg: 4, minPower_W: 100, unitTotalImpulse_Ns: Infinity, unitMass_kg: 0,
   },
 }
 

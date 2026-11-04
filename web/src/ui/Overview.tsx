@@ -104,9 +104,9 @@ const ASSUMPTIONS: { area: string; items: string[] }[] = [
   {
     area: 'Propulsion comparison',
     items: [
-      'Technologies are generic classes, not products. Isp and efficiency follow published ranges (e.g. Hall ≈ 66 µN/W, electrospray ≈ 48 µN/W).',
+      'Technologies are generic classes, not products. Isp and efficiency follow published ranges adjusted to small-satellite power levels (e.g. Hall ≈ 59 µN/W, electrospray ≈ 48 µN/W, gridded ion ≈ 19 µN/W).',
       'Tank fractions, fixed system masses and minimum operating powers are teaching estimates (table below). Ties within 10% are shown faded.',
-      'Not modelled: mass per thruster module, thruster wear life, efficiency falling at low power.',
+      'Thruster wear is modelled simply: enough thruster units are carried to deliver the mission’s total impulse, each adding mass. Not modelled: efficiency falling at low power within a technology.',
     ],
   },
   {
@@ -132,7 +132,7 @@ const NEXT_STEPS = [
   'Time-varying solar cycle: pick a launch year and fly through the cycle.',
   'Orbit-type choice (dawn-dusk or noon sun-synchronous, or other) that sets the sun angle and eclipse automatically.',
   'Uncertainty bands (Monte Carlo) on life, satellite count and mass.',
-  'Battery mass, per-module thruster mass and wear life, low-power thruster efficiency.',
+  'Battery mass; thruster efficiency that varies with operating power.',
   'An optimizer across altitude, satellite count and propulsion.',
   'Air-breathing electric propulsion as a clearly labelled what-if.',
 ]
@@ -145,9 +145,10 @@ function PropulsionAssumptions() {
     <div className="table-wrap">
       <table className="params">
         <caption>
-          Propulsion estimates for a ~50 kg spacecraft. Isp and efficiency follow published ranges; tank fraction, fixed
-          system mass and minimum power are teaching estimates reviewed by the project author (Nov 2026), with an
-          independent literature check in progress. Edit them in <code>web/src/model/propulsion.ts</code>.
+          Propulsion estimates for a ~50 kg spacecraft (20–200 W for propulsion). Isp and efficiency are adjusted to
+          small-satellite power levels from public datasheets and papers; tank fraction, fixed mass, minimum power and
+          wear life per unit were reviewed by the project author and checked against public data (Nov 2026). Sources in
+          physics.md §5.7; edit in <code>web/src/model/propulsion.ts</code>.
         </caption>
         <thead>
           <tr>
@@ -157,6 +158,8 @@ function PropulsionAssumptions() {
             <th scope="col">Tank (kg per kg propellant)</th>
             <th scope="col">Fixed system mass</th>
             <th scope="col">Minimum power</th>
+            <th scope="col">Wear life per unit</th>
+            <th scope="col">Each extra unit</th>
           </tr>
         </thead>
         <tbody>
@@ -165,11 +168,13 @@ function PropulsionAssumptions() {
             return (
               <tr key={t}>
                 <th scope="row">{p.label}</th>
-                <td>{sig(p.isp_s, 2)} s</td>
+                <td>{sig(p.isp_s, 3)} s</td>
                 <td>{p.efficiency === null ? '—' : sig(thrustToPower_N_W(p.isp_s, p.efficiency) * 1e6, 2)}</td>
                 <td>{p.tankFraction}</td>
                 <td>{p.systemFixedMass_kg} kg</td>
                 <td>{p.efficiency === null ? '—' : `${p.minPower_W} W`}</td>
+                <td>{Number.isFinite(p.unitTotalImpulse_Ns) ? `${p.unitTotalImpulse_Ns.toLocaleString('en-US')} N·s` : 'not limiting'}</td>
+                <td>{p.unitMass_kg ? `${p.unitMass_kg} kg` : '—'}</td>
               </tr>
             )
           })}
