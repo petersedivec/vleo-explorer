@@ -4,7 +4,7 @@ import { PROPULSION_PRESETS, thrustToPower_N_W, type PropulsionClass } from '../
 import { DEFAULT_INPUTS } from '../model/satellite'
 import { sig } from './format'
 
-export type TabId = 'overview' | 'heritage' | 'explore' | 'propulsion' | 'constellation'
+export type TabId = 'overview' | 'heritage' | 'explore' | 'propulsion101' | 'propulsion' | 'constellation'
 
 /** The central VLEO trade in one picture: benefits improve as you go lower, the cost of staying there explodes. */
 function TradeGraphic() {
@@ -66,6 +66,11 @@ const FLOW: { tab: TabId; title: string; text: string }[] = [
     tab: 'explore',
     title: 'Explore: single satellite',
     text: 'Design a single satellite or load a real one. Altitude, solar activity, payload, arrays and propulsion set here are shared with the tabs that follow.',
+  },
+  {
+    tab: 'propulsion101',
+    title: 'Propulsion 101',
+    text: 'New to spacecraft propulsion? The few ideas that explain every trade, a map of the field, and a card for each technology with a simple diagram.',
   },
   {
     tab: 'propulsion',

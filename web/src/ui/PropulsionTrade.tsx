@@ -40,6 +40,15 @@ const SHORT: Record<PropulsionClass, string> = {
   rfPlasma: 'RF plasma',
 }
 
+/** Spacecraft-size presets: size is the biggest lever on which technology wins. */
+const SIZES = [
+  { id: 'cubesat', label: 'CubeSat (~8 kg)', payloadMass_kg: 2, payloadPower_W: 5, busFixedMass_kg: 3, busPower_W: 5, budget_kg: 12 },
+  { id: 'small', label: 'Small (~60 kg)', payloadMass_kg: 20, payloadPower_W: 40, busFixedMass_kg: 15, busPower_W: 30, budget_kg: 80 },
+  { id: 'medium', label: 'Medium (~250 kg)', payloadMass_kg: 150, payloadPower_W: 300, busFixedMass_kg: 40, busPower_W: 80, budget_kg: 350 },
+] as const
+
+const WEAR_TECHS = TECHNOLOGIES.filter((t) => Number.isFinite(PROPULSION_PRESETS[t].unitTotalImpulse_Ns))
+
 const MAP_ALTITUDES = Array.from({ length: 36 }, (_, k) => (150 + 10 * k) * KM)
 const MAP_LIVES_YR = Array.from({ length: 21 }, (_, k) => 0.1 * 10 ** (k / 10))
 const LIFE_ALTITUDES = Array.from({ length: 36 }, (_, k) => (150 + 10 * k) * KM)
@@ -49,6 +58,7 @@ interface Props {
   inputs: SatelliteInputs
   set: (patch: Partial<SatelliteInputs>) => void
   onEditSpacecraft: () => void
+  onLearn: (tech: string) => void
 }
 
 function NumberSlider(props: {
@@ -85,17 +95,26 @@ function NumberSlider(props: {
   )
 }
 
-export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
+export function PropulsionTrade({ inputs, set, onEditSpacecraft, onLearn }: Props) {
   const [life_yr, setLife] = useState(3)
   const [budget_kg, setBudget] = useState(80)
   const [genericEta, setGenericEta] = useState(0.45)
   const [equalFixedMass, setEqualFixedMass] = useState(false)
   const [ignoreWear, setIgnoreWear] = useState(false)
-  const deferred = useDeferredValue({ inputs, life_yr, budget_kg, genericEta, equalFixedMass, ignoreWear })
-  const options = useMemo(
-    () => ({ equalFixedMass: deferred.equalFixedMass, ignoreWear: deferred.ignoreWear }),
-    [deferred.equalFixedMass, deferred.ignoreWear],
+  const [wearTech, setWearTech] = useState<PropulsionClass>('electrospray')
+  const [wearOverride_Ns, setWearOverride] = useState<number | null>(null)
+  const wearOverride = useMemo(
+    () => (wearOverride_Ns === null ? undefined : { tech: wearTech, unitTotalImpulse_Ns: wearOverride_Ns }),
+    [wearTech, wearOverride_Ns],
   )
+  const deferred = useDeferredValue({ inputs, life_yr, budget_kg, genericEta, equalFixedMass, ignoreWear, wearOverride })
+  const options = useMemo(
+    () => ({ equalFixedMass: deferred.equalFixedMass, ignoreWear: deferred.ignoreWear, wearOverride: deferred.wearOverride }),
+    [deferred.equalFixedMass, deferred.ignoreWear, deferred.wearOverride],
+  )
+  const sizeKey = SIZES.find(
+    (z) => z.payloadMass_kg === inputs.payloadMass_kg && z.payloadPower_W === inputs.payloadPower_W && z.busFixedMass_kg === inputs.busFixedMass_kg,
+  )?.id
   const life_s = deferred.life_yr * YEAR_S
   const h = deferred.inputs.altitude_m
 
@@ -197,6 +216,27 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
 
         <h2>Environment and spacecraft</h2>
         <div className="control">
+          <span className="control-label">Spacecraft size</span>
+          <div className="segmented" role="radiogroup" aria-label="Spacecraft size">
+            {SIZES.map((z) => (
+              <button
+                key={z.id}
+                type="button"
+                role="radio"
+                aria-checked={sizeKey === z.id}
+                className={sizeKey === z.id ? 'active' : ''}
+                onClick={() => {
+                  set({ payloadMass_kg: z.payloadMass_kg, payloadPower_W: z.payloadPower_W, busFixedMass_kg: z.busFixedMass_kg, busPower_W: z.busPower_W })
+                  setBudget(z.budget_kg)
+                }}
+              >
+                {z.label}
+              </button>
+            ))}
+          </div>
+          <p className="control-note">Size is the biggest lever: fixed masses and minimum powers weigh most on small spacecraft.</p>
+        </div>
+        <div className="control">
           <span className="control-label">Solar activity</span>
           <div className="segmented" role="radiogroup" aria-label="Solar activity">
             {MODES.map((m) => (
@@ -259,9 +299,47 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
           <input type="checkbox" checked={ignoreWear} onChange={(e) => setIgnoreWear(e.target.checked)} />
           Ignore thruster wear (one unit lasts forever)
         </label>
+        <div className="control">
+          <span className="control-label">
+            <span>What-if: wear life per unit</span>
+            <output>
+              {wearOverride_Ns === null
+                ? `${PROPULSION_PRESETS[wearTech].unitTotalImpulse_Ns.toLocaleString('en-US')} N·s (published)`
+                : `${sig(wearOverride_Ns, 2)} N·s (what-if)`}
+            </output>
+          </span>
+          <select
+            aria-label="Technology for the wear-life what-if"
+            value={wearTech}
+            onChange={(e) => {
+              setWearTech(e.target.value as PropulsionClass)
+              setWearOverride(null)
+            }}
+          >
+            {WEAR_TECHS.map((t) => (
+              <option key={t} value={t}>
+                {PROPULSION_PRESETS[t].label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="range"
+            aria-label="Wear life per unit"
+            min={1}
+            max={5}
+            step={0.01}
+            value={Math.log10(wearOverride_Ns ?? PROPULSION_PRESETS[wearTech].unitTotalImpulse_Ns)}
+            onChange={(e) => setWearOverride(Number((10 ** Number(e.target.value)).toPrecision(2)))}
+          />
+          {wearOverride_Ns !== null && (
+            <button type="button" className="link" onClick={() => setWearOverride(null)}>
+              Back to published value
+            </button>
+          )}
+        </div>
         <p className="control-note">
-          Fixed masses, tank fractions, minimum powers and wear life are estimates. Toggle these to see how much of each
-          win comes from them — for example, how much better electrospray would do if its modules lasted longer.
+          Fixed masses, tank fractions, minimum powers and wear life are estimates. Use these checks to see how much of
+          each win comes from them — for example, what a longer-lived thruster module would be worth.
         </p>
       </aside>
 
@@ -328,7 +406,9 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft }: Props) {
                 <tr key={r.tech}>
                   <th scope="row">
                     <span className="swatch" style={{ background: TECH_COLOR[r.tech] }} />
-                    {r.preset.label}
+                    <button type="button" className="link" title="How it works (Propulsion 101)" onClick={() => onLearn(r.tech)}>
+                      {r.preset.label}
+                    </button>
                   </th>
                   <td>{sig(r.preset.isp_s, 3)} s</td>
                   <td>{r.preset.efficiency === null ? '—' : sig(thrustToPower_N_W(r.preset.isp_s, r.preset.efficiency) * 1e6, 2)}</td>

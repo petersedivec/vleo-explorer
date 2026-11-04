@@ -149,7 +149,11 @@ export function Constellation({ inputs, set, onEditSpacecraft }: Props) {
             {slider({ label: 'Highest latitude to cover', infoKey: 'latitudeMax', value: c.latitudeMax_deg, min: 20, max: 90, step: 1, display: `±${c.latitudeMax_deg}°`, onChange: (v) => patch({ latitudeMax_deg: v }) })}
           </>
         )}
-        {slider({ label: 'Payload growth with altitude, k', infoKey: 'payloadExponent', value: c.payloadExponent, min: 0, max: 3, step: 0.1, display: `${c.payloadExponent.toFixed(1)}`, onChange: (v) => patch({ payloadExponent: v }) })}
+        {inputs.mode === 'design' ? (
+          slider({ label: 'Payload growth with altitude, k', infoKey: 'payloadExponent', value: c.payloadExponent, min: 0, max: 3, step: 0.1, display: `${c.payloadExponent.toFixed(1)}`, onChange: (v) => patch({ payloadExponent: v }) })
+        ) : (
+          <p className="control-note">Payload growth with altitude applies in Design mode only.</p>
+        )}
 
         <h2>Orbit and satellite</h2>
         {slider({ label: 'Altitude', infoKey: 'altitude', value: inputs.altitude_m / KM, min: 150, max: 600, step: 5, display: `${inputs.altitude_m / KM} km`, onChange: (v) => set({ altitude_m: v * KM }) })}
@@ -187,6 +191,17 @@ export function Constellation({ inputs, set, onEditSpacecraft }: Props) {
       </aside>
 
       <main>
+        {inputs.mode === 'asBuilt' && (
+          <div className="banner info-banner">
+            <strong>As-built spacecraft.</strong> The same real spacecraft — {sig(inputs.asBuilt.dryMass_kg, 3)} kg dry plus{' '}
+            {sig(inputs.propellant_kg, 2)} kg propellant — is placed at every altitude: no resizing, no payload growth, and
+            life is limited by its fixed propellant. That is why its mass is a flat line.{' '}
+            <button type="button" className="link" onClick={() => set({ mode: 'design' })}>
+              Switch to Design mode
+            </button>{' '}
+            to let the model re-size a satellite for each altitude instead.
+          </div>
+        )}
         <div className="summary">
           <div className="summary-card">
             <span className="card-label">Satellites needed at {inputs.altitude_m / KM} km</span>
@@ -312,9 +327,16 @@ export function Constellation({ inputs, set, onEditSpacecraft }: Props) {
           </figure>
           <figure>
             <figcaption>
-              <strong>Satellite wet mass vs altitude.</strong> Payload grows as (h / 300 km)^{c.payloadExponent.toFixed(1)} to
-              keep the same ground performance. At low altitude the arrays, thruster power and propellant needed to fight drag
-              for the whole design life add mass.
+              <strong>Satellite wet mass vs altitude.</strong>{' '}
+              {inputs.mode === 'design' ? (
+                <>
+                  Design mode: the satellite is re-sized at each altitude. Payload grows as (h / 300 km)^
+                  {c.payloadExponent.toFixed(1)} to keep the same ground performance; at low altitude the arrays, thruster
+                  power and propellant needed to fight drag for the whole design life add mass.
+                </>
+              ) : (
+                <>As built: the same spacecraft at every altitude, so its mass does not change.</>
+              )}
             </figcaption>
             <Chart
               data={[

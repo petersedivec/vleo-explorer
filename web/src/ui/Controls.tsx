@@ -104,9 +104,10 @@ interface ControlsProps {
   set: (patch: Partial<SatelliteInputs>) => void
   openInfo: InfoKey | null
   setOpenInfo: (key: InfoKey | null) => void
+  onLearn?: (tech: string) => void
 }
 
-export function Controls({ inputs, set, openInfo, setOpenInfo }: ControlsProps) {
+export function Controls({ inputs, set, openInfo, setOpenInfo, onLearn }: ControlsProps) {
   const electric = PROPULSION_PRESETS[inputs.propulsion].efficiency !== null
   const techId = useId()
   const eclipseId = useId()
@@ -294,6 +295,11 @@ export function Controls({ inputs, set, openInfo, setOpenInfo }: ControlsProps) 
             </option>
           ))}
         </select>
+        {onLearn && (
+          <button type="button" className="link small" onClick={() => onLearn(inputs.propulsion)}>
+            How does {PROPULSION_PRESETS[inputs.propulsion].label.replace(/ \(.*\)/, '')} work? →
+          </button>
+        )}
       </div>
       {asBuilt && (
         <Slider

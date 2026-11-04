@@ -11,6 +11,7 @@ import { duration, sig } from './ui/format'
 import { Constellation } from './ui/Constellation'
 import { Heritage } from './ui/Heritage'
 import { Overview, type TabId } from './ui/Overview'
+import { Propulsion101 } from './ui/Propulsion101'
 import { PropulsionTrade } from './ui/PropulsionTrade'
 import { INPUT_INFO, type InfoKey } from './ui/inputInfo'
 import { decodeInputs, encodeInputs } from './ui/urlState'
@@ -21,6 +22,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'heritage', label: 'Heritage missions' },
   { id: 'explore', label: 'Explore' },
+  { id: 'propulsion101', label: 'Propulsion 101' },
   { id: 'propulsion', label: 'Propulsion trade' },
   { id: 'constellation', label: 'Constellation' },
 ]
@@ -43,18 +45,19 @@ function missionFromHash(): string | null {
 interface ExploreProps {
   inputs: SatelliteInputs
   set: (patch: Partial<SatelliteInputs>) => void
+  onLearn: (tech: string) => void
   loaded: HeritageMission | null
   onShowMission: () => void
 }
 
-function Explore({ inputs, set, loaded, onShowMission }: ExploreProps) {
+function Explore({ inputs, set, loaded, onShowMission, onLearn }: ExploreProps) {
   const [openInfo, setOpenInfo] = useState<InfoKey | null>(null)
   const result = useMemo(() => evaluateSatellite(inputs), [inputs])
   const highlight = useMemo(() => new Set(openInfo ? INPUT_INFO[openInfo].affects : []), [openInfo])
 
   return (
     <div className="layout">
-      <Controls inputs={inputs} set={set} openInfo={openInfo} setOpenInfo={setOpenInfo} />
+      <Controls inputs={inputs} set={set} openInfo={openInfo} setOpenInfo={setOpenInfo} onLearn={onLearn} />
       <main>
         {loaded && (
           <div className="banner info-banner">
@@ -108,6 +111,16 @@ export default function App() {
   const [loadedId, setLoadedId] = useState<string | null>(() => (hashParams().get('loaded') ? missionFromHash() : null))
   const set = (patch: Partial<SatelliteInputs>) => setInputs((prev) => ({ ...prev, ...patch }))
   const loaded = HERITAGE_MISSIONS.find((m) => m.id === loadedId) ?? null
+  // Technology to scroll to on the Propulsion 101 tab.
+  const [learnTech, setLearnTech] = useState<string | null>(null)
+  const goTo = (t: Tab) => {
+    setTab(t)
+    window.scrollTo({ top: 0 })
+  }
+  const learnAbout = (tech: string) => {
+    setLearnTech(tech)
+    setTab('propulsion101')
+  }
 
   useEffect(() => {
     const prefix = new URLSearchParams()
@@ -163,6 +176,7 @@ export default function App() {
           inputs={inputs}
           set={set}
           loaded={loaded}
+          onLearn={learnAbout}
           onShowMission={() => {
             if (loaded) setMissionId(loaded.id)
             setTab('heritage')
@@ -170,7 +184,10 @@ export default function App() {
         />
       )}
       {tab === 'heritage' && <Heritage selectedId={missionId} onSelect={setMissionId} onLoad={loadMission} />}
-      {tab === 'propulsion' && <PropulsionTrade inputs={inputs} set={set} onEditSpacecraft={() => setTab('explore')} />}
+      {tab === 'propulsion101' && <Propulsion101 focus={learnTech} onCompare={() => goTo('propulsion')} />}
+      {tab === 'propulsion' && (
+        <PropulsionTrade inputs={inputs} set={set} onEditSpacecraft={() => setTab('explore')} onLearn={learnAbout} />
+      )}
       {tab === 'constellation' && <Constellation inputs={inputs} set={set} onEditSpacecraft={() => setTab('explore')} />}
 
       <footer>

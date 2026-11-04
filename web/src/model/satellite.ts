@@ -76,6 +76,8 @@ export interface SatelliteInputs {
   ignoreThrusterWear?: boolean
   /** A single idealised thruster of any size: no unit count, no wear (the generic Isp curve). */
   idealThruster?: boolean
+  /** What-if: replaces the technology's wear life per unit (N·s). */
+  unitTotalImpulseOverride_Ns?: number
   /** If false, the thruster fires in daylight only (duty = 1 - eclipse fraction). */
   thrustInEclipse: boolean
   propellant_kg: number
@@ -335,7 +337,8 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
   let diverged = false
   let units = 1
   const coverLife = inputs.impulseCoverLife_s ?? inputs.designLife_s
-  const wearLimited = !inputs.ignoreThrusterWear && !inputs.idealThruster && Number.isFinite(preset.unitTotalImpulse_Ns)
+  const unitImpulse = inputs.unitTotalImpulseOverride_Ns ?? preset.unitTotalImpulse_Ns
+  const wearLimited = !inputs.ignoreThrusterWear && !inputs.idealThruster && Number.isFinite(unitImpulse)
 
   for (; iterations < MAX_ITERATIONS; iterations++) {
     const dragArea = bodyArea(dryMass) + kArray * arrayArea
@@ -346,7 +349,7 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
     units = inputs.idealThruster ? 1 : Math.max(
       1,
       Math.ceil(fireThrust / preset.unitThrust_N - 1e-9),
-      wearLimited && Number.isFinite(coverLife) ? Math.ceil(nominalImpulse / preset.unitTotalImpulse_Ns - 1e-9) : 1,
+      wearLimited && Number.isFinite(coverLife) ? Math.ceil(nominalImpulse / unitImpulse - 1e-9) : 1,
     )
     const newThrusterPower = electric
       ? Math.max(electricPower_W(fireThrust, inputs.isp_s, inputs.efficiency), inputs.minPowerOverride_W ?? preset.minPower_W)
@@ -383,7 +386,7 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
   }
 
   const bodyFrontal = bodyArea(dryMass)
-  const wearImpulse = wearLimited ? units * preset.unitTotalImpulse_Ns : Infinity
+  const wearImpulse = wearLimited ? units * unitImpulse : Infinity
   const common = lifeAndEnvironment(
     { ...inputs, totalImpulse_Ns: Math.min(inputs.totalImpulse_Ns, wearImpulse) },
     dryMass,

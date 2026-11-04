@@ -24,11 +24,16 @@ export interface TradeOptions {
   equalFixedMass?: boolean
   /** Ignore thruster wear (one unit lasts forever), to see how much wear life drives the result. */
   ignoreWear?: boolean
+  /** What-if: a different wear life per unit for one technology. */
+  wearOverride?: { tech: PropulsionClass; unitTotalImpulse_Ns: number }
 }
+
+const unitImpulseFor = (tech: PropulsionClass, options: TradeOptions) =>
+  options.wearOverride?.tech === tech ? options.wearOverride.unitTotalImpulse_Ns : PROPULSION_PRESETS[tech].unitTotalImpulse_Ns
 
 /** Whether a technology's sizing depends on mission life (through thruster wear). */
 const wearMatters = (tech: PropulsionClass, options: TradeOptions) =>
-  !options.ignoreWear && Number.isFinite(PROPULSION_PRESETS[tech].unitTotalImpulse_Ns)
+  !options.ignoreWear && Number.isFinite(unitImpulseFor(tech, options))
 
 export interface TechDesign {
   tech: PropulsionClass
@@ -58,6 +63,7 @@ export function designFor(
     minPowerOverride_W: override ? 0 : undefined,
     idealThruster: override ? true : undefined,
     ignoreThrusterWear: options.ignoreWear,
+    unitTotalImpulseOverride_Ns: options.wearOverride?.tech === tech ? options.wearOverride.unitTotalImpulse_Ns : undefined,
     impulseCoverLife_s: life_s ?? base.designLife_s,
     // Propellant does not affect sizing; it is added below.
     propellant_kg: 0,

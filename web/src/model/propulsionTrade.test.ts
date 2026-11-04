@@ -92,4 +92,12 @@ describe('thruster wear', () => {
     const r = requirementFor(base, 'feep', 350e3, life)
     expect(r.wet_kg).toBeLessThanOrEqual(80 * 1.001)
   })
+
+  it('a what-if wear life changes only the chosen technology', () => {
+    const opts = { wearOverride: { tech: 'electrospray' as const, unitTotalImpulse_Ns: 10_000 } }
+    const es = requirementFor(base, 'electrospray', 350e3, 5 * YEAR_S, opts)
+    const esPublished = requirementFor(base, 'electrospray', 350e3, 5 * YEAR_S)
+    expect(es.wet_kg).toBeLessThan(esPublished.wet_kg)
+    expect(requirementFor(base, 'hall', 350e3, 5 * YEAR_S, opts).wet_kg).toBeCloseTo(requirementFor(base, 'hall', 350e3, 5 * YEAR_S).wet_kg, 9)
+  })
 })
