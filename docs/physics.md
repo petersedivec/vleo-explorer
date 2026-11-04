@@ -199,7 +199,7 @@ small-satellite values (derived η = T·g₀·Isp / 2P where only thrust, power 
 | Gridded ion | 2,200 | 0.20 | 1 mN | ≈ 19 µN/W | 50–75 W systems: ≈ 0.8–1.1 mN at ≈ 2,200 s |
 | Hall (xenon) | 1,200 | 0.35 | 5 mN | ≈ 59 µN/W | η 0.24–0.43 at 100–200 W; ≈ 0.5 at 400 W+ |
 | Hall (krypton) | 1,350 | 0.26 | 4 mN | ≈ 39 µN/W | Kr ≈ 0.6–0.75× Xe efficiency at small scale |
-| RF / ambipolar plasma | 800 | 0.12 | 10 mN | ≈ 31 µN/W | Flight-class units at 300–500 W; many devices ≤ 10% |
+| RF / ambipolar plasma | 800 | 0.12 | 10 mN | ≈ 31 µN/W | Flight units ≈ 50–500 W; many devices ≤ 10% |
 
 Sources (public, Nov 2026): SETS ST-25/ST-40 and SPS-25 data; Busek BHT-200, BIT-3 and BET-300-P
 pages and lifetime test (AIAA 2020-3614); ThrustMe NPT30-I2 (flight 2020); ENPULSION NANO/MICRO
@@ -264,13 +264,13 @@ against public data, Nov 2026:
 | Gridded ion | 0.15 | 0.8 | 35 | 5,500 | 1.0 |
 | Hall (xenon) | 0.15 | 2.5 | 75 | 50,000 | 0.7 |
 | Hall (krypton) | 0.30 | 2.5 | 100 | 40,000 | 0.7 |
-| RF plasma | 0.15 | 4 | 100 | not limiting (no electrodes) | — |
+| RF plasma | 0.15 | 4 | 50 | not limiting (no electrodes) | — |
 
 Basis: xenon tanks 0.07–0.09 for large tanks, higher for small; krypton stores at about one third of
 xenon's density (0.25–0.45); electrospray ~92 N·s demonstrated per module in a 2020 lifetime test;
 FEEP ~5 kN·s and small ion ~5.5 kN·s per unit; small Hall ~50 kN·s (krypton erodes faster: estimate);
-RF plasma uses the only flight-class product found (300–500 W class, ≈ 7 kg dry), scaled down, rather
-than lab-scale values.
+RF plasma uses flight-unit values rather than lab-scale ones: flown units range from about 50 W (an
+iodine plasma thruster, 2021) to the 300–500 W class (≈ 7 kg dry).
 
 **Thruster wear (simple model).** Units carried n = max(1, ⌈T_sized / T_unit⌉, ⌈D · L / I_unit⌉),
 where L is the life the thrusters must survive (design life in Explore and Constellation; the required

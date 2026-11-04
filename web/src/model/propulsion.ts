@@ -84,7 +84,7 @@ export const PROPULSION_PRESETS: Record<PropulsionClass, PropulsionPreset> = {
   rfPlasma: {
     label: 'RF / ambipolar plasma', isp_s: 800, efficiency: 0.12, unitThrust_N: 10e-3, fixedPower_W: 0,
     tankFraction: 0.15, propellant: 'Xenon, krypton or iodine',
-    systemFixedMass_kg: 4, minPower_W: 100, unitTotalImpulse_Ns: Infinity, unitMass_kg: 0,
+    systemFixedMass_kg: 4, minPower_W: 50, unitTotalImpulse_Ns: Infinity, unitMass_kg: 0,
   },
 }
 

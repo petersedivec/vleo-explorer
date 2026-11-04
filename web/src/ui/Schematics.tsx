@@ -91,11 +91,11 @@ const DIAGRAMS: Record<TechCard['id'], () => ReactNode> = {
         <path key={y} d={`M106,${y - 6} L122,${y} L106,${y + 6} Z`} className="s-part" />
       ))}
       <Label x={114} y={112}>
-        emitter tips
+        emitters (high voltage)
       </Label>
       <line x1={140} y1={36} x2={140} y2={96} className="s-grid" />
       <Label x={140} y={26}>
-        extractor (high voltage)
+        extractor grid
       </Label>
       <Plume x={150} kind="ions" label="" />
       <text x={204} y={112} className="s-small" textAnchor="middle">
@@ -105,8 +105,7 @@ const DIAGRAMS: Record<TechCard['id'], () => ReactNode> = {
   ),
   feep: () => (
     <>
-      <Tank x={10} label="Indium" sub="melted" />
-      <Pipe x1={72} x2={104} />
+      <Tank x={44} label="Indium" sub="built-in" />
       <path d="M106,52 L130,65 L106,78 Z" className="s-part" />
       <Label x={116} y={40}>
         needle
@@ -121,7 +120,7 @@ const DIAGRAMS: Record<TechCard['id'], () => ReactNode> = {
   ),
   griddedIon: () => (
     <>
-      <Tank x={10} label="Xenon" />
+      <Tank x={10} label="Xenon" sub="or iodine" />
       <Pipe x1={72} x2={98} />
       <rect x={100} y={38} width={60} height={54} rx={6} className="s-plasmabox" />
       <text x={130} y={69} className="s-text" textAnchor="middle">
@@ -158,11 +157,15 @@ const DIAGRAMS: Record<TechCard['id'], () => ReactNode> = {
       <Label x={135} y={34}>
         RF antenna
       </Label>
-      <path d="M172,50 C200,46 215,30 240,22 M172,80 C200,84 215,100 240,108" className="s-field" />
-      <Label x={215} y={124}>
+      <rect x={170} y={40} width={10} height={50} className="s-part" />
+      <Label x={175} y={104}>
+        magnet
+      </Label>
+      <path d="M180,50 C205,46 220,30 245,22 M180,80 C205,84 220,100 245,108" className="s-field" />
+      <Label x={222} y={124}>
         magnetic nozzle
       </Label>
-      <Plume x={176} kind="plasma" label="" />
+      <Plume x={184} kind="plasma" label="" />
     </>
   ),
   airBreathing: () => (
@@ -194,6 +197,12 @@ function HallDiagram({ gas }: { gas: string }) {
       <Pipe x1={72} x2={98} />
       <rect x={100} y={34} width={66} height={18} className="s-part" />
       <rect x={100} y={78} width={66} height={18} className="s-part" />
+      <text x={150} y={46} className="s-small" textAnchor="middle">
+        magnet
+      </text>
+      <text x={150} y={90} className="s-small" textAnchor="middle">
+        magnet
+      </text>
       <rect x={100} y={52} width={10} height={26} className="s-part" />
       <Label x={106} y={112}>
         anode
