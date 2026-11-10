@@ -1,6 +1,7 @@
 // Number formatting for display: engineering units, limited significant figures.
 
 import { DAY_S, YEAR_S } from '../model/constants'
+import { unitLife_h, type PropulsionPreset } from '../model/propulsion'
 
 export function sig(x: number, digits = 3): string {
   if (!Number.isFinite(x)) return x > 0 ? '∞' : '—'
@@ -32,3 +33,11 @@ export function duration(seconds: number): string {
 }
 
 export const sci = (x: number, digits = 2) => (Number.isFinite(x) ? x.toExponential(digits - 1) : '—')
+
+/** Wear life per unit with its hours-at-rated-thrust equivalent and, where given, the plausible band. */
+export function wearLife(p: PropulsionPreset, withRange = true): string {
+  if (!Number.isFinite(p.unitTotalImpulse_Ns)) return 'not limiting'
+  const base = `${p.unitTotalImpulse_Ns.toLocaleString('en-US')} N·s (≈ ${sig(unitLife_h(p), 2)} h at rated thrust)`
+  const r = p.unitTotalImpulseRange_Ns
+  return withRange && r ? `${base}; plausible band, scaled from public life tests, ${r[0].toLocaleString('en-US')}–${r[1].toLocaleString('en-US')} N·s` : base
+}

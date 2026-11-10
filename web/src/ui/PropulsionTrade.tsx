@@ -17,7 +17,7 @@ import {
 import type { SatelliteInputs } from '../model/satellite'
 import { Chart } from './Chart'
 import { cssColor, KM, MODE_LABEL, MODES, solarModeOf } from './common'
-import { duration, sig } from './format'
+import { duration, sig, wearLife } from './format'
 
 const TECH_COLOR: Record<PropulsionClass, string> = {
   coldGas: 'var(--tech-0)',
@@ -304,7 +304,7 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft, onLearn }: Prop
             <span>What-if: wear life per unit</span>
             <output>
               {wearOverride_Ns === null
-                ? `${PROPULSION_PRESETS[wearTech].unitTotalImpulse_Ns.toLocaleString('en-US')} N·s (published)`
+                ? `${PROPULSION_PRESETS[wearTech].unitTotalImpulse_Ns.toLocaleString('en-US')} N·s (preset)`
                 : `${sig(wearOverride_Ns, 2)} N·s (what-if)`}
             </output>
           </span>
@@ -333,9 +333,10 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft, onLearn }: Prop
           />
           {wearOverride_Ns !== null && (
             <button type="button" className="link" onClick={() => setWearOverride(null)}>
-              Back to published value
+              Back to preset value
             </button>
           )}
+          <p className="control-note">Preset: {wearLife(PROPULSION_PRESETS[wearTech])}.</p>
         </div>
         <p className="control-note">
           Fixed masses, tank fractions, minimum powers and wear life are estimates. Use these checks to see how much of
@@ -582,8 +583,9 @@ export function PropulsionTrade({ inputs, set, onEditSpacecraft, onLearn }: Prop
               Isp and efficiency are adjusted to small-satellite power levels from public data; tank fractions, fixed
               system masses, minimum powers, and wear life per unit are estimates (physics.md §5.7). Thruster wear is
               modelled simply: enough units are carried to cover the mission’s total impulse, each adding mass.
-              Electrospray’s published module life (about 100 N·s, 2020) is its main limit for long missions and is
-              improving. Not yet modelled: efficiency falling off at low power, and battery mass. Where the winner map is
+              Electrospray’s wear life per module is its main limit for long missions and the least certain number in
+              the comparison: the preset (300 N·s, about 560 h at rated thrust) sits in a wide band of roughly 50–2,000
+              N·s scaled from public life tests, so try the what-if. Not yet modelled: efficiency falling off at low power, and battery mass. Where the winner map is
               faded, or changes when you toggle the checks, treat the result as a tie.
             </p>
           </figure>

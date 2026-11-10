@@ -5,7 +5,7 @@ import { CONCEPTS, TECH_CARDS, type TechCard } from '../data/propulsion101'
 import { PROPULSION_PRESETS, thrustToPower_N_W } from '../model/propulsion'
 import { Chart } from './Chart'
 import { cssColor } from './common'
-import { sig } from './format'
+import { sig, wearLife } from './format'
 import { Schematic } from './Schematics'
 
 const CARD_COLOR: Record<TechCard['id'], string> = {
@@ -28,7 +28,7 @@ function Numbers({ card }: { card: TechCard }) {
     ['Thrust per watt', p.efficiency === null ? 'not power-limited' : `${sig(thrustToPower_N_W(p.isp_s, p.efficiency) * 1e6, 2)} µN/W (η ${p.efficiency})`],
     ['Thrust per unit', p.unitThrust_N >= 0.1 ? `${sig(p.unitThrust_N, 2)} N` : `${sig(p.unitThrust_N * 1e3, 2)} mN`],
     ['Minimum power', p.efficiency === null ? '—' : p.minPower_W ? `${p.minPower_W} W` : 'none'],
-    ['Wear life per unit', Number.isFinite(p.unitTotalImpulse_Ns) ? `${p.unitTotalImpulse_Ns.toLocaleString('en-US')} N·s` : 'not limiting'],
+    ['Wear life per unit', wearLife(p)],
     ['Tank per kg propellant', `${p.tankFraction} kg`],
   ]
   return (

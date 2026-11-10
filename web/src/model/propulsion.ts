@@ -15,7 +15,10 @@ export type PropulsionClass =
 export interface PropulsionPreset {
   label: string
   isp_s: number
-  /** Total efficiency (jet power / input power); null for thrusters that are not power-limited. */
+  /**
+   * Total system efficiency (jet power / electrical input power, including power-processing-unit losses);
+   * null for thrusters that are not power-limited. Lab papers often quote thruster-only efficiency, which is higher.
+   */
   efficiency: number | null
   /** Thrust per thruster unit or module. */
   unitThrust_N: number
@@ -40,6 +43,11 @@ export interface PropulsionPreset {
    * physics.md §5.7). Infinity where wear is not the limit. More units are carried to cover the mission.
    */
   unitTotalImpulse_Ns: number
+  /**
+   * Plausible range of wear life per unit, scaled from public life tests (physics.md §5.7), where the preset
+   * sits inside a wide band. Shown in the UI so the single value is not over-read.
+   */
+  unitTotalImpulseRange_Ns?: [number, number]
   /** Mass of each additional thruster unit or module beyond the first (included in the fixed mass). */
   unitMass_kg: number
 }
@@ -59,7 +67,8 @@ export const PROPULSION_PRESETS: Record<PropulsionClass, PropulsionPreset> = {
   electrospray: {
     label: 'Electrospray (ionic liquid)', isp_s: 1500, efficiency: 0.35, unitThrust_N: 0.15e-3, fixedPower_W: 0,
     tankFraction: 0.08, propellant: 'Ionic liquid (unpressurised)',
-    systemFixedMass_kg: 0.5, minPower_W: 2, unitTotalImpulse_Ns: 100, unitMass_kg: 0.2,
+    systemFixedMass_kg: 0.5, minPower_W: 2, unitTotalImpulse_Ns: 300, unitTotalImpulseRange_Ns: [50, 2000],
+    unitMass_kg: 0.2,
   },
   feep: {
     label: 'FEEP', isp_s: 3500, efficiency: 0.15, unitThrust_N: 0.35e-3, fixedPower_W: 0,
@@ -94,6 +103,10 @@ export const electricPower_W = (thrust_N: number, isp_s: number, efficiency: num
 
 /** Derived thrust-to-power, N/W. */
 export const thrustToPower_N_W = (isp_s: number, efficiency: number) => (2 * efficiency) / (G0 * isp_s)
+
+/** Hours one unit can fire at its rated thrust before it reaches its wear life. */
+export const unitLife_h = (p: Pick<PropulsionPreset, 'unitTotalImpulse_Ns' | 'unitThrust_N'>) =>
+  p.unitTotalImpulse_Ns / p.unitThrust_N / 3600
 
 export const massFlow_kg_s = (thrust_N: number, isp_s: number) => thrust_N / (G0 * isp_s)
 

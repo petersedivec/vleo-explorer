@@ -2,7 +2,7 @@
 
 import { PROPULSION_PRESETS, thrustToPower_N_W, type PropulsionClass } from '../model/propulsion'
 import { DEFAULT_INPUTS } from '../model/satellite'
-import { sig } from './format'
+import { sig, wearLife } from './format'
 
 export type TabId = 'overview' | 'heritage' | 'explore' | 'propulsion101' | 'propulsion' | 'constellation'
 
@@ -173,7 +173,7 @@ function PropulsionAssumptions() {
                 <td>{p.tankFraction}</td>
                 <td>{p.systemFixedMass_kg} kg</td>
                 <td>{p.efficiency === null ? '—' : `${p.minPower_W} W`}</td>
-                <td>{Number.isFinite(p.unitTotalImpulse_Ns) ? `${p.unitTotalImpulse_Ns.toLocaleString('en-US')} N·s` : 'not limiting'}</td>
+                <td>{wearLife(p, false)}</td>
                 <td>{p.unitMass_kg ? `${p.unitMass_kg} kg` : '—'}</td>
               </tr>
             )

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { YEAR_S } from './constants'
-import { PROPULSION_PRESETS } from './propulsion'
+import { PROPULSION_PRESETS, unitLife_h } from './propulsion'
 import { budgetLifeFor, designFor, ispCurve, NEUTRAL_FIXED_MASS_KG, requirementFor, TECHNOLOGIES, winnerMap } from './propulsionTrade'
 import { DEFAULT_INPUTS } from './satellite'
 
@@ -99,5 +99,15 @@ describe('thruster wear', () => {
     const esPublished = requirementFor(base, 'electrospray', 350e3, 5 * YEAR_S)
     expect(es.wet_kg).toBeLessThan(esPublished.wet_kg)
     expect(requirementFor(base, 'hall', 350e3, 5 * YEAR_S, opts).wet_kg).toBeCloseTo(requirementFor(base, 'hall', 350e3, 5 * YEAR_S).wet_kg, 9)
+  })
+
+  it('wear-life bands contain the preset, and hours follow from N·s and thrust', () => {
+    for (const t of TECHNOLOGIES) {
+      const p = PROPULSION_PRESETS[t]
+      if (!p.unitTotalImpulseRange_Ns) continue
+      expect(p.unitTotalImpulse_Ns).toBeGreaterThanOrEqual(p.unitTotalImpulseRange_Ns[0])
+      expect(p.unitTotalImpulse_Ns).toBeLessThanOrEqual(p.unitTotalImpulseRange_Ns[1])
+    }
+    expect(unitLife_h(PROPULSION_PRESETS.electrospray)).toBeCloseTo(300 / 0.15e-3 / 3600, 6)
   })
 })

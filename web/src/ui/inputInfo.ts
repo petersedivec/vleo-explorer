@@ -150,14 +150,14 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     what: 'Class of thruster used to cancel drag. Choosing one loads typical specific impulse and efficiency; both remain adjustable.',
     typical: 'Cold gas and monopropellant: high thrust, low Isp. Electric (electrospray, FEEP, gridded ion, Hall, RF plasma): low thrust, high Isp, needs electrical power.',
     drives: ['Propellant use per year', 'Thruster power and array size', 'Mission life'],
-    insight: 'There is no best thruster, only best for a given altitude, life and power budget. Wear life matters too: a module that delivers only ~100 N·s needs many copies for a multi-year mission. The Propulsion trade tab maps where each one wins.',
+    insight: 'There is no best thruster, only best for a given altitude, life and power budget. Wear life matters too: a module rated for a few hundred N·s needs many copies for a multi-year mission. The Propulsion trade tab maps where each one wins.',
     reference: 'NASA Small Spacecraft Technology State of the Art, In-Space Propulsion',
     affects: ['thrusterPower', 'thrusterUnits', 'propPerYear', 'missionLife', 'limitedBy', 'arrayArea', 'dryMass', 'loopGain'],
   },
   isp: {
     title: 'Specific impulse (Isp)',
     what: 'How much thrust you get per unit of propellant flow, in seconds. Exhaust speed = Isp × 9.81 m/s.',
-    typical: 'At small-satellite power: cold gas ~65 s; monopropellant ~220 s; Hall ~1,200 s; electrospray ~1,500 s (range 225–3,000+); gridded ion ~2,200 s; FEEP ~3,500 s.',
+    typical: 'At small-satellite power: cold gas ~65 s; monopropellant ~220 s; Hall ~1,200 s; electrospray ~1,500 s (droplet-mode ~150–250; small ion-mode chips ~600–1,500; pure-ion beams up to ~4,000); gridded ion ~2,200 s; FEEP ~3,500 s.',
     drives: [
       'Propellant use: inversely — double Isp, half the propellant',
       'Thruster power for the same thrust: proportionally — double Isp, double the power',
@@ -169,7 +169,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
   efficiency: {
     title: 'Thruster efficiency η',
     what: 'Fraction of electrical input power that ends up as kinetic energy in the exhaust. Together with Isp it sets thrust per watt: T/P = 2η / (g₀·Isp).',
-    typical: 'Small thrusters are much less efficient than kilowatt ones. At 20–200 W: Hall ~0.35, electrospray ~0.35, krypton Hall ~0.26, gridded ion ~0.20, FEEP ~0.15, RF plasma ~0.12. In thrust per watt: Hall ~59 µN/W, electrospray ~48, gridded ion ~19, FEEP ~9.',
+    typical: 'System efficiency, including power-electronics losses (lab papers often quote the thruster alone, which is higher). Small thrusters are much less efficient than kilowatt ones. At 20–200 W: Hall ~0.35, electrospray ~0.35, krypton Hall ~0.26, gridded ion ~0.20, FEEP ~0.15, RF plasma ~0.12. In thrust per watt: Hall ~59 µN/W, electrospray ~48, gridded ion ~19, FEEP ~9.',
     drives: ['Thruster power, inversely', 'Array area, mass and drag through the power'],
     insight: 'Thrust per watt (µN/W, shown next to the slider) is derived, not chosen: you cannot have high Isp and high thrust per watt without high efficiency.',
     reference: 'Goebel & Katz, ch. 2',
@@ -226,7 +226,7 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
   maxThrust: {
     title: 'Maximum thrust (as built)',
     what: 'The most thrust the spacecraft can produce continuously for drag makeup. Zero means no drag makeup — the spacecraft simply decays.',
-    typical: 'Electrospray modules 0.01–1 mN each; GOCE 1–20 mN; SLATS up to 28 mN.',
+    typical: 'Electrospray heads ~0.005–0.1 mN each, grouped into modules; GOCE 1–20 mN; SLATS up to 28 mN.',
     drives: ['Thrust margin: available thrust ÷ drag', 'Whether the spacecraft can hold altitude at all'],
     insight: 'Below a margin of 1 the spacecraft cannot hold altitude. Above 1 but close to it, a storm or a rising solar cycle can push it under.',
     affects: ['thrustMargin', 'missionLife'],

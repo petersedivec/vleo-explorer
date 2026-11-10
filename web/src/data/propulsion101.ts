@@ -112,24 +112,24 @@ export const TECH_CARDS: TechCard[] = [
   {
     id: 'electrospray',
     name: 'Electrospray (ionic liquid)',
-    oneLiner: 'A strong electric field pulls ions straight out of a liquid salt at microscopic emitter tips.',
+    oneLiner: 'A strong electric field pulls ions, and in some designs tiny charged droplets, out of a liquid salt at microscopic emitter tips.',
     howItWorks:
-      'An ionic liquid — a salt that is liquid at room temperature — wets thousands of sharp emitter tips held at high voltage relative to a nearby extractor grid. The field pulls the liquid into tiny cones (Taylor cones) whose tips emit a beam of ions. Because the liquid holds both positive and negative ions, many designs avoid a separate neutraliser by alternating polarity or pairing positive and negative emitters. Thrust is set by the voltage and the number of emitters, so systems scale by adding chips or modules.',
+      'An ionic liquid — a salt that is liquid at room temperature — wets thousands of sharp emitter tips held at high voltage relative to a nearby extractor grid. The field pulls the liquid into tiny cones (Taylor cones) whose tips emit a beam of charged particles, accelerated through about 1–2 kV (kilovolts; several kV in older designs). Ion-only ("pure-ion") beams reach about 3,000–4,000 s, but practical small chips measure about 600–1,500 s after losses; designs that also emit droplets (the older "colloid" thrusters) run at about 150–250 s and give more thrust per watt. Because the liquid holds both positive and negative ions, many designs avoid a separate neutraliser by alternating polarity or pairing positive and negative emitters. Thrust is set by the voltage and the number of emitters, so systems scale by adding chips or modules.',
     propellant: 'Ionic liquid, unpressurised; often held inside the thruster module itself.',
     strengths: [
       'No pressurised tank, no gas feed system',
       'Scales down well: tiny modules, very low minimum power',
-      'Good thrust per watt (~48 µN/W) and very precise, throttleable thrust',
+      'Good thrust per watt (~48 µN/W in the app, at system level including power electronics) and very precise, throttleable thrust',
     ],
     weaknesses: [
-      'Low thrust per module (~0.1–0.2 mN): mN-level thrust needs many modules',
-      'Emitter wear: a published 2020 lifetime test delivered about 90–100 N·s per module',
+      'Low thrust: single emitter heads give ~0.005–0.1 mN, so mN-level thrust needs many heads or modules (the app uses 0.15 mN per module)',
+      'Emitter wear is the least certain number: public life tests ran from about a hundred hours (ion-mode chips) to a few thousand (droplet-mode heads on ST7: ~2,400 h in flight on LISA Pathfinder), and several stopped before wearing out. The app uses 300 N·s per module (~560 h at rated thrust) and shows a 50–2,000 N·s band; the top end comes only from droplet-mode heritage',
     ],
     vleoFit:
-      'In the app it is the lightest choice for small (CubeSat-class) spacecraft above about 250 km — if module life is long enough. With the published ~100 N·s per module, multi-year missions need hundreds of modules. Use the wear-life what-if on the Propulsion trade tab to see what longer-lived modules would be worth.',
-    heritage: 'Colloid (electrospray) micro-thrusters flew on LISA Pathfinder (2015–2017); several CubeSat demonstrations since.',
+      'In the app (300 N·s per module) it is the clear lightest choice for CubeSat-class spacecraft at about 280–450 km on missions of a few months to about two years, and ties for lightest on many other CubeSat cases and on short missions of larger spacecraft above about 320 km. Longer missions need many modules, and FEEP or Hall take over. These results hinge on wear life, the least certain number: try the 50–2,000 N·s band with the wear-life what-if on the Propulsion trade tab.',
+    heritage: 'Colloid (electrospray) micro-thrusters flew as NASA’s ST7 experiment on LISA Pathfinder (2015–2017); AeroCube-8 (2015–16) carried ion-electrospray thrusters for a CubeSat demonstration, with little flight data published; several CubeSat demonstrations since.',
     maturity: 'Flight-demonstrated; lifetime is the active development area.',
-    ispRange_s: [225, 3000],
+    ispRange_s: [150, 4000],
     thrustRange_N: [1e-5, 1.5e-3],
     reading: [NASA_SST, EP_REVIEW],
   },
