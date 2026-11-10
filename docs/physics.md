@@ -177,7 +177,8 @@ The integrator must match this within 1%.
 | Thrust-to-power (derived, not an input) | T/P = 2η / (g₀ Isp) |
 | Mass flow | ṁ = T / (g₀ Isp) |
 
-η is the total efficiency (jet power ÷ input power). Isp and η are inputs; thrust-to-power
+η is the total **system** efficiency (jet power ÷ electrical input power, including power-processing-unit
+losses). Laboratory papers usually quote thruster-only efficiency, which is higher. Isp and η are inputs; thrust-to-power
 is derived so the three cannot disagree.
 
 ### 5.2 Cold gas and monopropellant
@@ -194,7 +195,7 @@ small-satellite values (derived η = T·g₀·Isp / 2P where only thrust, power 
 |---|---|---|---|---|---|
 | Cold gas | 65 | — | 10 mN | — | N₂ 65–71 s; butane 50–69 s |
 | Monopropellant (green) | 220 | — | 1 N | — | AF-M315E ≥ 220 s |
-| Electrospray (ionic liquid) | 1,500 | 0.35 | 0.15 mN per module | ≈ 48 µN/W | Published 40–65 µN/W; ~150 µN per head |
+| Electrospray (ionic liquid) | 1,500 | 0.35 | 0.15 mN per module | ≈ 48 µN/W | Isp 150–4,000 s by mode (droplet/colloid ≈ 150–250 s; small ion-mode chips ≈ 600–1,500 s after losses; pure-ion beams ≈ 3,000–4,000 s), so 1,500 s is at the top end for small modules; thruster-only η ≈ 0.3–0.65 × PPU 0.66–0.9 → system ≈ 0.25–0.55, ≈ 30–90 µN/W (derived, not published; the high end is optimistic because high η comes with high Isp); single heads ≈ 5–100 µN, so a module is several heads |
 | FEEP | 3,500 | 0.15 | 0.35 mN | ≈ 9 µN/W | Bus-level ≈ 130 W/mN incl. heater and neutraliser |
 | Gridded ion | 2,200 | 0.20 | 1 mN | ≈ 19 µN/W | 50–75 W systems: ≈ 0.8–1.1 mN at ≈ 2,200 s |
 | Hall (xenon) | 1,200 | 0.35 | 5 mN | ≈ 59 µN/W | η 0.24–0.43 at 100–200 W; ≈ 0.5 at 400 W+ |
@@ -259,7 +260,7 @@ against public data, Nov 2026:
 |---|---|---|---|---|---|
 | Cold gas | 0.6 | 0.5 | — | not limiting | — |
 | Monopropellant | 0.15 | 1.5 | — | not limiting | — |
-| Electrospray | 0.08 | 0.5 | 2 | 100 | 0.2 |
+| Electrospray | 0.08 | 0.5 | 2 | 300 (band 50–2,000) | 0.2 |
 | FEEP | 0.10 | 0.8 | 10 | 5,000 | 0.9 |
 | Gridded ion | 0.15 | 0.8 | 35 | 5,500 | 1.0 |
 | Hall (xenon) | 0.15 | 2.5 | 75 | 50,000 | 0.7 |
@@ -267,10 +268,35 @@ against public data, Nov 2026:
 | RF plasma | 0.15 | 4 | 50 | not limiting (no electrodes) | — |
 
 Basis: xenon tanks 0.07–0.09 for large tanks, higher for small; krypton stores at about one third of
-xenon's density (0.25–0.45); electrospray ~92 N·s demonstrated per module in a 2020 lifetime test;
+xenon's density (0.25–0.45); electrospray wear life is the least certain value (see below);
 FEEP ~5 kN·s and small ion ~5.5 kN·s per unit; small Hall ~50 kN·s (krypton erodes faster: estimate);
 RF plasma uses flight-unit values rather than lab-scale ones: flown units range from about 50 W (an
 iodine plasma thruster, 2021) to the 300–500 W class (≈ 7 kg dry).
+
+**Electrospray wear life (reviewed and fact-checked Nov 2026).** 300 N·s per 0.15 mN module is ≈ 560 h at rated
+thrust. No public test reports N·s per module directly; the band below is scaled from test hours to a 0.15 mN
+module. Ion- and mixed-mode tests: passively fed ion chips emitted ≈ 90–172 h without current decay (≈ 50–90 N·s
+scaled; Krejci et al., J. Spacecraft & Rockets 54(2), 2017); a JPL beam-target test-method run > 470 h (≈ 250 N·s
+scaled, a lower bound; JPL poster R23119, 2024); a 2020 lifetime test of one commercial module (AIAA 2020-3614),
+≈ 92 N·s. Droplet-mode (colloid) heritage: ST7 on LISA Pathfinder ran ≈ 2,400 h in flight, and its ground life
+test ran ≈ 3,400–3,500 h and delivered ≈ 245 N·s per head against a 140 N·s requirement (NTRS 20170010216;
+Anderson et al., Phys. Rev. D 98, 102005, 2018, which also notes the flight anomalies would not be acceptable for
+a primary propulsion system). Several of these tests stopped before wear-out, so they are lower bounds; hours do
+not carry over directly between droplet and ion modes, and modelling shows small grid-geometry changes alter
+predicted life up to several-fold while misalignment cuts it by 20–50% (Thuppul, Wright, Collins, Ziemer & Wirz,
+Aerospace 7(8):108, 2020). The app therefore uses **300 N·s** as a central teaching estimate — slightly above the
+longest published ion-mode run, justified only because those runs stopped before wear-out — and shows a
+**50–2,000 N·s band** (≈ 90–3,700 h); the top of the band rests on droplet-mode heritage only. The Propulsion
+trade what-if explores the band. This number moves the electrospray results more than any other (in the review's
+sensitivity runs, ≈ 0 → ≈ 90 clear CubeSat wins out of 756 winner-map cells going from 100 to 300 N·s), so treat
+electrospray wins as conditional on it.
+
+Other electrospray values are teaching estimates: extra-module mass 0.2 kg (plausible 0.1–0.3 kg, the second
+largest lever), minimum power 2 W (plausible 1–5 W, set by power electronics rather than the emitters), fixed
+system mass 0.5 kg. The generic PPU mass of 0.02 kg/W (§7) is conservative for electrospray; a published 10 W
+electrospray PPU is ≈ 0.004 kg/W (39 g at 10 W; Blázquez-Plaza et al., CEAS Space J. 17, 2024). Flight systems with control electronics, heaters and a
+neutraliser can fall far below laboratory thrust per watt (ST7: a few µN/W at system level, ≈ 17 W per
+four-head cluster at up to 30 µN per head).
 
 **Thruster wear (simple model).** Units carried n = max(1, ⌈T_sized / T_unit⌉, ⌈D · L / I_unit⌉),
 where L is the life the thrusters must survive (design life in Explore and Constellation; the required
@@ -328,7 +354,8 @@ Unknowns: dry mass m_dry, array area A_array, thruster power P_thr. Iterate:
 1. Loads: P_d = P_bus + P_payload + P_thr; P_e as configured (§6.3).
 2. A_array from §6.2.
 3. Body frontal area: A_body = s_f · (m_dry / ρ_bulk)^(2/3); ρ_bulk = 400 kg/m³, shape factor
-   s_f = 0.6 (teaching defaults), or a fixed user value.
+   s_f = 0.6 (teaching defaults), or a fixed user value; never less than the payload's own ram-facing area
+   (e.g. a telescope barrel): A_body = max(that, A_payload).
 4. A_ref and D from §3, using ρ × k_storm for sizing.
 5. P_thr from §5.1 with T_fire = D / d.
 6. m_dry = m_payload + m_bus_fixed + f_struct · m_dry + σ_array A_array + α_ppu P_thr + m_thruster_fixed
@@ -343,6 +370,15 @@ Unknowns: dry mass m_dry, array area A_array, thruster power P_thr. Iterate:
   (`MASS_GROWTH_LIMIT`, a stated practicality limit, not physics).
 
 The drag-free reference sizes arrays for bus and payload loads only.
+
+**Two independent solutions.** The TypeScript model solves the loop by fixed-point iteration as above. The
+Python reference (`reference/vleo_model.py`, `size_design`) solves it differently: for a trial dry mass, steps
+2–5 are linear in A_array (above the minimum power), so A_array = (L E_b + c A_body E_t) / (p (1 − G)), with
+c the thruster watts per square metre of storm-drag area, E_b and E_t the array watts per watt of all-orbit and
+thruster load (§6.2), p the array watts per m² and G the loop gain of §7.1; the dry mass is then the first root
+of the mass balance above the drag-free mass, found by scanning and bisection (Brent). Golden vectors from the
+Python solution (`reference/golden/physics.json`, `sizing` and `as_built`) are checked by
+`web/src/model/golden.test.ts` to 10⁻⁵.
 
 ### 7.1 Loop gain (why there is a hard floor)
 
@@ -515,4 +551,8 @@ Steady-state replacement view: ignores financing and the time value of money; st
 | ISS decay (~420 km, B ≈ 100–150 kg/m²) | order of a few km per month | v1, loose band |
 | GOCE (~1,050 kg, ≈1 m² frontal, ~260 km, 1–20 mN thrust range) | modelled drag within thruster range | v1, loose band |
 | Starlink Feb 2022 storm at ~210 km | storm-margin density makes small Starlink-class satellites infeasible | v1 |
+| Sizing loop, recomputed by hand at the solution | every equation of §7 holds to 10⁻⁹ | v1 (`reference/tests/test_sizing.py`) |
+| Sizing loop, Python vs TypeScript (11 design cases, 2 as-built) | within 10⁻⁵ (decay times 2 × 10⁻³) | v1 |
+| Hard floor vs loop gain, edge-on and sun-tracking | G < 0.85 closes, G > 1.05 does not | v1 |
+| Drag-free limit at 900 km | dry mass → drag-free reference within 0.2% | v1 |
 | NASA DAS / STK lifetime comparisons | within ×2 | later, when data are gathered |

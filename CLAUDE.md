@@ -36,7 +36,7 @@ constellation size, and which thruster does the job best where.
 |---|---|
 | `PLAN.md` | Goals, scope, roadmap, **decision log** (append new decisions there) |
 | `docs/physics.md` | Equation spec, presets, sources |
-| `reference/` | Python reference model (physics + atmosphere), NRLMSIS table generator, validation tests, golden vectors |
+| `reference/` | Python reference model (physics, atmosphere, closed sizing loop, as-built), NRLMSIS table generator, validation tests, golden vectors |
 | `web/src/model/` | Pure TypeScript model: `satellite.ts` (closed sizing loop, as-built), `atmosphere.ts`, `drag.ts`, `propulsion.ts` (presets), `propulsionTrade.ts`, `constellation.ts`, `heritage.ts` |
 | `web/src/data/` | `atmosphere.json` (generated), `heritage.ts` (missions, sourced), `propulsion101.ts` (primer content) |
 | `web/src/ui/` | React UI. Tabs: `Overview`, `Heritage`, Explore (`Controls`/`Cards`/`ExploreCharts`), `PropulsionTrade`, `Constellation`; sub-page `Propulsion101` (reached by links, not a main tab) |
@@ -55,7 +55,7 @@ npm run lint && npm run typecheck && npm test && npm run build
 
 cd reference
 python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt
-python -m pytest -q    # validation vs Vallado, ISS, GOCE, Edelbaum, analytic decay
+python -m pytest -q    # validation vs Vallado, ISS, GOCE, Edelbaum, analytic decay, sizing loop
 python build_atmos.py  # regenerate web/src/data/atmosphere.json (pymsis pinned)
 python make_golden.py  # regenerate golden vectors used by web/src/model/golden.test.ts
 ```
@@ -86,8 +86,7 @@ mass to orbit per year, optimum altitude); Overview landing page; Propulsion 101
   In-Space Propulsion chapter (nasa.gov was not reachable from the cloud sessions so far).
 
 **Next to build (agreed, in rough order)**
-1. Extend the Python reference model to the sizing loop (then constellation and trade) for independent
-   validation and future reuse.
+1. Extend the Python reference model to constellation and propulsion trade (sizing loop done Nov 2026).
 2. Requirement-based payload sizing for the three missions — optical (GSD), SAR (NESZ, ambiguity-limited
    antenna), direct-to-device (uplink-limited antenna) — replacing the (h/300 km)^k payload scaling.
 3. Cost model: satellites, launch, replacement and operations → cost per year and cost per unit of service

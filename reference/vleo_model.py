@@ -263,3 +263,218 @@ def descent_time_s(
         rtol=1e-9, atol=[1e-3, 1e-9], max_step=1e3,
     )
     return float(sol.y[0, -1]), mass_kg - float(sol.y[1, -1])
+
+
+# ── Closed sizing loop (§7), as-built mode (§7a) and life (§4–§5.6) ────────────
+#
+# Written from docs/physics.md, independently of web/src/model/satellite.ts. The TypeScript model
+# iterates mass, array area and power together until they stop changing. Here, for a trial dry mass,
+# the array–drag–power coupling is linear and is solved in closed form (its denominator is 1 − G, the
+# loop gain of §7.1); the dry mass is then found by root-finding the mass balance. Two methods agreeing
+# is a stronger check than one method translated twice.
+
+from dataclasses import dataclass, field, replace  # noqa: E402
+
+from scipy.optimize import brentq  # noqa: E402
+
+K_GRAZE = 0.07  # §3
+K_TRACK = 2 / math.pi  # §3
+X_ECLIPSE, X_DAYLIGHT = 0.6, 0.8  # §6.2
+MASS_GROWTH_LIMIT = 10.0  # §7
+
+
+@dataclass(frozen=True)
+class Thruster:
+    """One technology's numbers (§5.3, §5.7). efficiency None = not power-limited (cold gas, monoprop)."""
+
+    isp_s: float
+    efficiency: float | None
+    unit_thrust_N: float
+    fixed_power_W: float = 0.0
+    min_power_W: float = 0.0
+    unit_total_impulse_Ns: float = math.inf
+    unit_mass_kg: float = 0.0
+    system_fixed_mass_kg: float = 0.0
+
+
+@dataclass(frozen=True)
+class Spacecraft:
+    altitude_m: float = 300e3
+    inclination_deg: float = 53.0
+    beta_deg: float = 0.0
+    f107: float = 150.0
+    ap: float = 15.0
+    atmosphere: str = "msis"  # or "exponential"
+    storm_margin: float = 3.0
+    payload_mass_kg: float = 20.0
+    payload_power_W: float = 40.0
+    payload_frontal_area_m2: float = 0.0
+    bus_fixed_mass_kg: float = 15.0
+    bus_power_W: float = 30.0
+    structure_fraction: float = 0.25
+    body_frontal_area_m2: float | None = None
+    bulk_density_kg_m3: float = 400.0
+    shape_factor: float = 0.6
+    cd: float = 2.2
+    array_orientation: str = "edgeOn"  # or "sunTracking"
+    cell_efficiency: float = 0.30
+    packing_factor: float = 0.85
+    life_degradation: float = 0.85
+    array_areal_mass_kg_m2: float = 3.0
+    ppu_specific_mass_kg_W: float = 0.02
+    thrust_in_eclipse: bool = True
+    propellant_kg: float = 8.0
+    design_life_s: float = 5 * YEAR_S
+    total_impulse_Ns: float = math.inf  # rated impulse of the thruster set, beyond wear
+    wear: bool = True
+    thruster: Thruster = field(default_factory=lambda: Thruster(1200, 0.35, 5e-3, 0, 75, 50_000, 0.7, 2.5))
+
+
+def density_fn(sc: Spacecraft):
+    if sc.atmosphere == "exponential":
+        return exponential_density_kg_m3
+    t = msis()
+    return lambda h: t.density_kg_m3(h, sc.f107, sc.ap, sc.inclination_deg)
+
+
+def _life(sc: Spacecraft, dry_kg: float, drag_area_m2: float, impulse_cap_Ns: float) -> dict:
+    """Drag, lives and decay for a spacecraft of known mass and area (§3–§5.6)."""
+    rho_fn = density_fn(sc)
+    h = sc.altitude_m
+    rho = rho_fn(h)
+    d = drag_N(rho, circular_speed_m_s(h), sc.cd, drag_area_m2)
+    wet = dry_kg + sc.propellant_kg
+    prop_life = propellant_life_s(sc.propellant_kg, sc.thruster.isp_s, d)
+    impulse_life = min(sc.total_impulse_Ns, impulse_cap_Ns) / d
+    unit_b = 1 / (sc.cd * drag_area_m2)
+    return {
+        "density_kg_m3": rho,
+        "drag_N": d,
+        "wet_mass_kg": wet,
+        "propellant_life_s": prop_life,
+        "impulse_life_s": impulse_life,
+        "mission_life_s": min(prop_life, impulse_life, sc.design_life_s),
+        "natural_lifetime_s": decay_lifetime_s(h, wet * unit_b, rho_fn),
+        "disposal_time_s": decay_lifetime_s(h, dry_kg * unit_b, rho_fn),
+    }
+
+
+def size_design(sc: Spacecraft) -> dict:
+    """Design mode: find the dry mass that closes mass, power and drag (§7)."""
+    th = sc.thruster
+    h = sc.altitude_m
+    rho_storm = density_fn(sc)(h) * sc.storm_margin
+    v = circular_speed_m_s(h)
+    t_orbit = period_s(h)
+    fe = eclipse_fraction(h, sc.beta_deg)
+    duty = 1.0 if sc.thrust_in_eclipse else 1 - fe
+    sun_tracking = sc.array_orientation == "sunTracking"
+    k_array = (K_TRACK if sun_tracking else 0.0) + K_GRAZE
+    cos_avg = 1.0 if sun_tracking else K_TRACK
+    p_area = SOLAR_CONSTANT * sc.cell_efficiency * sc.packing_factor * sc.life_degradation * cos_avg  # W/m²
+    electric = th.efficiency is not None
+
+    # §6.2: array power = (P_e T_e / X_e + P_d T_d / X_d) / T_d. Split into array watts per watt of load.
+    t_e, t_d = fe * t_orbit, (1 - fe) * t_orbit
+    e_base = t_e / (X_ECLIPSE * t_d) + 1 / X_DAYLIGHT  # bus and payload run all orbit
+    e_thr = (t_e / (X_ECLIPSE * t_d) if sc.thrust_in_eclipse else 0.0) + 1 / X_DAYLIGHT
+    base_load = sc.bus_power_W + sc.payload_power_W
+    q = 0.5 * rho_storm * v**2 * sc.cd  # storm drag per m² of reference area
+    watts_per_newton = G0 * th.isp_s / (2 * th.efficiency * duty) if electric else 0.0  # §5.1 with T_fire = D/d
+    gain = q * k_array * watts_per_newton * e_thr / p_area  # §7.1
+
+    def body_area(m: float) -> float:
+        a = sc.body_frontal_area_m2 if sc.body_frontal_area_m2 is not None else sc.shape_factor * (m / sc.bulk_density_kg_m3) ** (2 / 3)
+        return max(a, sc.payload_frontal_area_m2)
+
+    def state(m: float) -> dict | None:
+        """Array, power and drag consistent with dry mass m; None if no array is large enough (G ≥ 1)."""
+        a_body = body_area(m)
+        if electric:
+            # P = c (A_body + k A_array), A_array = (L E_b + P E_t) / p  →  linear in A_array.
+            if gain >= 1:
+                return None
+            a_arr = (base_load * e_base + q * watts_per_newton * a_body * e_thr) / (p_area * (1 - gain))
+            p_thr = q * watts_per_newton * (a_body + k_array * a_arr)
+            if p_thr < th.min_power_W:  # §5.7 minimum operating power
+                p_thr = th.min_power_W
+                a_arr = (base_load * e_base + p_thr * e_thr) / p_area
+        else:
+            p_thr = th.fixed_power_W
+            a_arr = (base_load * e_base + p_thr * e_thr) / p_area
+        storm_drag = q * (a_body + k_array * a_arr)
+        nominal_drag = storm_drag / sc.storm_margin
+        units = max(1, math.ceil(storm_drag / duty / th.unit_thrust_N - 1e-9))
+        if sc.wear and math.isfinite(th.unit_total_impulse_Ns) and math.isfinite(sc.design_life_s):
+            units = max(units, math.ceil(nominal_drag * sc.design_life_s / th.unit_total_impulse_Ns - 1e-9))
+        mass = (
+            sc.payload_mass_kg + sc.bus_fixed_mass_kg + sc.array_areal_mass_kg_m2 * a_arr
+            + (sc.ppu_specific_mass_kg_W * p_thr if electric else 0.0)
+            + th.system_fixed_mass_kg + (units - 1) * th.unit_mass_kg
+        ) / (1 - sc.structure_fraction)
+        return {"array_area_m2": a_arr, "thruster_power_W": p_thr, "storm_drag_N": storm_drag,
+                "body_area_m2": a_body, "units": units, "mass_kg": mass}
+
+    # Drag-free reference (§7): arrays for bus and payload only, no PPU power.
+    base_array = base_load * e_base / p_area
+    m0 = (sc.payload_mass_kg + sc.bus_fixed_mass_kg + sc.array_areal_mass_kg_m2 * base_array
+          + th.system_fixed_mass_kg) / (1 - sc.structure_fraction)
+
+    result = {"drag_free_dry_mass_kg": m0, "eclipse_fraction": fe, "duty": duty, "loop_gain": gain if electric else 0.0}
+
+    def residual(m: float) -> float:
+        s = state(m)
+        return s["mass_kg"] - m
+
+    # The least fixed point of the (increasing) mass map is the design: scan up from m0 for the first
+    # point where the mass balance closes, then refine. None within 10 × m0 → infeasible (§7).
+    feasible, reason, m_star = False, "massGrowth", math.nan
+    if electric and gain >= 1:
+        reason = "loopGain"
+    else:
+        grid = m0 * np.geomspace(1.0, MASS_GROWTH_LIMIT, 400)
+        prev = grid[0]
+        for m in grid[1:]:
+            if residual(m) <= 0:
+                m_star = brentq(residual, prev, m, xtol=1e-12, rtol=1e-13)
+                # Unit counts make the map a staircase; take the right side of any step.
+                s = state(m_star)
+                if s["mass_kg"] > m_star:
+                    m_star = s["mass_kg"]
+                feasible, reason = True, None
+                break
+            prev = m
+    if not feasible:
+        return {**result, "feasible": False, "infeasibility": reason}
+
+    s = state(m_star)
+    impulse_cap = s["units"] * th.unit_total_impulse_Ns if sc.wear else math.inf
+    drag_area = s["body_area_m2"] + k_array * s["array_area_m2"]
+    life = _life(sc, m_star, drag_area, impulse_cap)
+    return {
+        **result, **life,
+        "feasible": True, "infeasibility": None,
+        "dry_mass_kg": m_star,
+        "mass_growth": m_star / m0,
+        "array_area_m2": s["array_area_m2"],
+        "body_frontal_area_m2": s["body_area_m2"],
+        "drag_area_m2": drag_area,
+        "thruster_power_W": s["thruster_power_W"],
+        "storm_drag_N": s["storm_drag_N"],
+        "thruster_units": s["units"],
+    }
+
+
+def evaluate_as_built(sc: Spacecraft, dry_mass_kg: float, drag_area_m2: float, max_thrust_N: float) -> dict:
+    """As-built mode (§7a): mass, area and thrust are given; check whether it holds altitude."""
+    th = sc.thruster
+    fe = eclipse_fraction(sc.altitude_m, sc.beta_deg)
+    duty = 1.0 if sc.thrust_in_eclipse else 1 - fe
+    life = _life(sc, dry_mass_kg, drag_area_m2, math.inf)
+    margin = max_thrust_N * duty / life["drag_N"]
+    power = electric_power_W(life["drag_N"] / duty, th.isp_s, th.efficiency) if th.efficiency is not None else th.fixed_power_W
+    return {**life, "feasible": margin >= 1, "thrust_margin": margin, "thruster_power_W": power,
+            "mission_life_s": life["mission_life_s"] if margin >= 1 else 0.0}
+
+
+__all__ = ["Spacecraft", "Thruster", "size_design", "evaluate_as_built", "replace"]

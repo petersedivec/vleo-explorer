@@ -337,6 +337,8 @@ No existing tool combines VLEO focus + propulsion/power/life coupling + constell
 | Nov 2026 | Corrected presets to published thrust-to-power: electrospray η 0.35 (≈48 µN/W), RF plasma η 0.15 (≈38 µN/W); added per-technology tank fraction and fixed system mass (teaching estimates) |
 | Nov 2026 | v1.4 constellation tab added before missions and cost; uses mass to orbit per year as a technical proxy for cost |
 | Nov 2026 | Propulsion comparison is purely technical. Default basis: equal total (wet) mass, compare capability (life, minimum altitude); alternative: equal mission requirement, compare total mass. "Equal propellant mass" shown only to explain why it misleads |
+| Nov 2026 | Electrospray preset reviewed against public literature and independently fact-checked: η 0.35 kept and defined as system-level including PPU losses; Isp range stated as 150–4,000 s (droplet to pure-ion; 1,500 s is the top end for small modules); wear life per module raised from 100 to **300 N·s with a 50–2,000 N·s band** scaled from public life tests (top end from ST7 droplet-mode heritage only), hours at rated thrust shown next to N·s; wear values labelled "preset" not "published"; AeroCube-8 added to the Propulsion 101 card |
+| Nov 2026 | Python reference extended to the closed sizing loop and As-built mode, solved by a different method (closed-form array/power per trial mass + root-find) from the TypeScript fixed-point iteration; 13 golden cases agree to 10⁻⁵. Next for the reference: constellation and trade |
 
 ## 11. Open questions
 
