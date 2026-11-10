@@ -45,10 +45,13 @@ export function wearLife(p: PropulsionPreset, withRange = true): string {
 /** US dollars to 2 significant figures with k/M/B, e.g. 1.23e7 → "$12M"; small values keep 2 figures. */
 export function money(x: number): string {
   if (!Number.isFinite(x)) return '—'
-  const abs = Math.abs(x)
+  if (x === 0) return '$0'
+  // Round to 2 significant figures first, then choose the suffix, so 999,400 shows as $1.0M.
+  const r = Number(x.toPrecision(2))
+  const two = (v: number) => (Math.abs(v) >= 100 ? Math.round(v).toLocaleString('en-US') : v.toPrecision(2))
   for (const [scale, suffix] of [[1e9, 'B'], [1e6, 'M'], [1e3, 'k']] as const)
-    if (abs >= scale * 0.9995) return `$${sig(x / scale, 2)}${suffix}`
-  return `$${sig(x, 2)}`
+    if (Math.abs(r) >= scale) return `$${two(r / scale)}${suffix}`
+  return `$${two(r)}`
 }
 
 /** A low–high dollar band, e.g. "$12M–$48M". */

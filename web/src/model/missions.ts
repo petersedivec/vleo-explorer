@@ -47,8 +47,8 @@ export const MISSION_PARAMS = {
     barrelLengthFactor: 1.5,
     /** Detector pixels across track: swath = pixels × GSD. */
     pixelsAcross: 12000,
-    /** Fraction of the orbit spent imaging. */
-    imagingDuty: 0.1,
+    /** Fraction of the orbit spent imaging (small satellites are limited by downlink and power). */
+    imagingDuty: 0.02,
   },
   sar: {
     /** X band, 9.65 GHz. */
@@ -62,8 +62,8 @@ export const MISSION_PARAMS = {
     arealMass_kg_m2: 15,
     electronicsMass_kg: 15,
     standbyPower_W: 20,
-    /** Fraction of the orbit spent imaging. */
-    imagingDuty: 0.1,
+    /** Fraction of the orbit spent imaging (about 5 minutes per orbit). */
+    imagingDuty: 0.05,
     /** Reference design: DC power while imaging, at this altitude, antenna margin and NESZ. */
     refImagingPower_W: 1000,
     refAltitude_m: 500e3,

@@ -445,8 +445,8 @@ All reference values below are **teaching estimates** with the reasoning given; 
   scaling rule uses the aperture ratio cubed for both): mass would grow as D³ at fixed focal ratio and density,
   lightweighted optics pull it down to ≈ 2–3; at fixed GSD the detector does not change, so power growth is
   mainly thermal control of larger optics, taken as ≈ D².
-- Imaging swath = 12,000 pixels across × GSD (9.6 km at 0.8 m); imaging duty 10% of the orbit. Used only for
-  cost per km² imaged (§11).
+- Imaging swath = 12,000 pixels across × GSD (9.6 km at 0.8 m); imaging duty 2% of the orbit (small imagers
+  are limited by downlink and power). Used only for cost per km² imaged (§11).
 - Telescope barrel (compact, folded design): diameter 1.3 D, length 1.5 D. Pointed at nadir, its **side**
   faces the flow, so the body's frontal area is at least 1.3 D × 1.5 D (§7 step 3).
 - Not modelled: detector-limited (rather than diffraction-limited) designs, off-nadir resolution loss,
@@ -466,7 +466,7 @@ All reference values below are **teaching estimates** with the reasoning given; 
   imaging) at h_ref = 500 km, A_ref = 1.2 A_min(h_ref), NESZ_ref = −17 dB at ≈ 3 m ground-range resolution
   (NESZ ∝ 1 / resolution; a radar-equation check with ≈ 300 W average RF and typical losses gives ≈ −17 dB). With A ∝ v R, **P_img ∝ R / v**,
   roughly ∝ R: radar gains far less from low altitude than optics.
-- Orbit-average payload power = 20 W standby + 10% imaging duty × P_img. Mass = 15 kg electronics + 15 kg/m² × A.
+- Orbit-average payload power = 20 W standby + 5% imaging duty (≈ 5 min per orbit) × P_img. Mass = 15 kg electronics + 15 kg/m² × A.
 - Stripmap swath ≈ λ R / (H cos θ), H = antenna height (elevation beam spread over the slant range, projected on
   the ground): ≈ 52 km at 500 km. Used only for cost per km² imaged (§11).
 - Drag: long axis along track, face looking sideways, so the flow sees the antenna's edge (height × 0.1 m)
@@ -557,32 +557,40 @@ simulation in v2. Scales ∝ ~1/λ² ∝ ~1/h².
 ## 11. Cost [v1.5]
 
 Code: `web/src/model/cost.ts`; shown on the Constellation tab. Every parameter is a low–high range of
-**teaching assumptions** (not market data); results are bands rounded to two significant figures, with the
-breakdown always visible. Steady-state replacement view: no development (non-recurring) cost, financing,
-time value of money, insurance, launch failures, spectrum or licensing.
+**teaching assumptions** in US$ of about 2025 (not market data); results are bands rounded to two significant
+figures, with the breakdown always visible. Steady-state replacement view. Not included: development
+(non-recurring) cost, financing and the time value of money, insurance, launch failures, spectrum and
+licensing, large-scale data processing and archiving, company overheads and profit. Fact-checked
+independently (Nov 2026; sources seen in search snippets only).
 
 | Quantity | Equation |
 |---|---|
 | First-unit cost | C₁ = c_bus · (m_dry − m_payload) + c_payload · m_payload |
-| Learning curve (Wright) | average unit cost over N units = C₁ · (1/N) Σₖ k^(log₂ L) |
-| Learning rate L | 0.95 for N < 10, 0.90 for 10–50, 0.85 above 50 (the New SMAD's guidance by quantity) |
-| Launch per satellite | c_launch · m_wet |
+| Learning curve (Wright, cumulative average) | average cost per unit over N units = C₁ · N^(log₂ L): each doubling of N multiplies the average by L |
+| Learning rate L | 95% below 10 units, 90% for 10–49, 85% for 50 or more (SMAD 3rd ed. §20, after Meisl & Morales, Aerospace Corp.); applied by segment (95% to 10, 90% from 10 to 50, 85% beyond) so cost is continuous in N |
+| Launch per satellite | c_launch · m_wet (to the release orbit; descent to VLEO is modelled in §8, not costed) |
 | Replacements per year | N / t_life (§10.4) |
-| **Cost per year to sustain** | (C_avg + launch) · N / t_life + c_ops · N + C_fixed |
+| **Cost per year to sustain** | C_avg · N / t_life + launch · N / t_life + c_ops · N + C_fixed |
 | Deployment | N · (C_avg + launch) |
 
-| Assumption (US$) | Low | High | Reasoning |
+Replacements are later, cheaper units on the curve; averaging over the first N is conservative.
+
+| Assumption (US$, ~2025) | Low | High | Reasoning |
 |---|---|---|---|
-| c_bus, first unit, per kg of bus | 30k | 100k | Small-satellite buses span roughly tens of thousands of dollars per kg in production to well over 100k/kg for one-off government builds; the learning curve brings large constellations down further |
+| c_bus, first unit, per kg of bus | 30k | 100k | Small-satellite buses span tens of thousands of dollars per kg in production to over 100k/kg for one-off government builds; older Small Satellite Cost Model examples (≈ $3.8M for a 60 kg microsatellite, FY95) fall inside. Mass-produced broadband satellites sit below this band |
 | c_payload, first unit, per kg | 60k | 250k | Payloads cost more per kg than buses (optics, radar electronics, phased arrays) |
-| c_launch, per kg of wet mass | 6k | 30k | Low: published rideshare prices to sun-synchronous orbit (~$6k/kg, 2024–25). High: dedicated small launchers (~$20–40k/kg) |
-| c_ops, per satellite per year | 50k | 200k | Automated fleet operations at the low end; small fleets with dedicated staff at the high end |
-| C_fixed, per year | 1M | 5M | Ground stations, mission control and data handling for the whole constellation |
+| c_launch, per kg of wet mass | 6k | 30k | Low: published rideshare list prices to sun-synchronous orbit (≈ $6–7k/kg, 2024–26, 50 kg minimum). High: a full dedicated small launcher (≈ $25k/kg), more if partly full |
+| c_ops, per satellite per year | 50k | 400k | Automated fleet operations at the low end; ground-station-as-a-service antenna time alone can reach ≈ $0.2–0.5M per satellite per year |
+| C_fixed, per year | 1M | 15M | Ground segment, mission control and some data handling; large-scale processing and archiving would add more |
 
 **Cost per unit of service** (a cost to collect or serve, not a market price):
-- Imaging (optical, radar): dollars per km² actually imaged. Area imaged per year =
-  N × swath × ground speed × imaging duty × year (swaths in §9.1–9.2).
-- Phone service: dollars per cell per year; cells = area of the latitude band ÷ π (w/2)².
+- Imaging (optical, radar): dollars per km² the sensors could collect. Area per year = N × swath × ground
+  speed × imaging duty × year (swaths and duties in §9.1–9.2). An **upper bound**: downlink capacity is not
+  modelled. Commercial imagery sells for thousands of times more per km² (≈ $16–60/km² for 30–50 cm
+  products) because most collected area is never sold (cloud, duplicates, untasked areas) and prices carry
+  everything excluded above.
+- Phone service: dollars per cell per year; cells = area of the latitude band ÷ π (w/2)². Most cells are over
+  ocean or empty land.
 - Other continuous coverage: dollars per km² of the band per year. A scaled payload on revisit coverage has
   no defined swath, so no service metric is shown.
 

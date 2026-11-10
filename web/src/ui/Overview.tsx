@@ -115,7 +115,7 @@ const ASSUMPTIONS: { area: string; items: string[] }[] = [
       'Satellite counts are analytic: revisit from the sensor’s field of regard with evenly spread passes; continuous coverage from ideal hexagonal packing (a lower bound).',
       'Payloads are sized from a mission requirement at each altitude: a diffraction-limited telescope for a ground resolution, a side-looking radar antenna at its ambiguity limit with power set by sensitivity, or a phone-link antenna set by cell size and uplink. These are first-order teaching models with estimated reference values; a simpler (altitude ÷ 300 km)^k scaling is still available.',
       'Mass to orbit per year is a steady-state replacement figure; it excludes launch adapters and dispensers.',
-      'Cost is a teaching estimate shown as a low–high band (build with a learning curve, launch, operations); it excludes development cost, financing, insurance and launch failures. Cost per unit of service is a cost to collect or serve, not a market price.',
+      'Cost is a teaching estimate shown as a low–high band (build with a learning curve, launch, operations); it excludes development cost, financing, insurance, launch failures, large-scale data processing, overheads and profit. Cost per unit of service is a cost to collect or serve, not a market price.',
     ],
   },
   {

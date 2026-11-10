@@ -504,11 +504,12 @@ def optical_payload(altitude_m: float, gsd_m: float, *, q=1.22, wavelength_m=550
                     p_ref=100.0, k_mass=2.5, k_power=2.0, barrel_d=1.3, barrel_l=1.5) -> dict:
     d = q * wavelength_m * altitude_m / gsd_m
     return {"size": d, "mass_kg": m_ref * (d / d_ref) ** k_mass, "power_W": p_ref * (d / d_ref) ** k_power,
-            "frontal_area_m2": barrel_d * d * barrel_l * d, "drag_area_m2": 0.0, "imaging_swath_m": 12000 * gsd_m}
+            "frontal_area_m2": barrel_d * d * barrel_l * d, "drag_area_m2": 0.0, "imaging_swath_m": 12000 * gsd_m,
+            "imaging_duty": 0.02}
 
 
 SAR = dict(wavelength_m=SPEED_OF_LIGHT / 9.65e9, incidence_deg=30.0, margin=1.2, aspect=8.0, thickness_m=0.1,
-           areal_mass=15.0, electronics_kg=15.0, standby_W=20.0, duty=0.1, ref_imaging_W=1000.0,
+           areal_mass=15.0, electronics_kg=15.0, standby_W=20.0, duty=0.05, ref_imaging_W=1000.0,
            ref_altitude_m=500e3, ref_nesz_dB=-17.0)
 
 

@@ -476,9 +476,9 @@ export function Constellation({ inputs, set, onEditSpacecraft }: Props) {
 const ASSUMPTION_ROWS: [keyof CostAssumptions, string, string][] = [
   ['busPerKg', 'Bus, first unit', 'per kg of dry mass other than payload'],
   ['payloadPerKg', 'Payload, first unit', 'per kg of payload'],
-  ['launchPerKg', 'Launch', 'per kg of wet mass (rideshare to dedicated small launcher)'],
-  ['opsPerSatelliteYear', 'Operations', 'per satellite per year'],
-  ['fixedPerYear', 'Ground segment and mission operations', 'per year, whole constellation'],
+  ['launchPerKg', 'Launch', 'per kg of wet mass: rideshare list price (~$6–7k/kg, 50 kg minimum) to a full dedicated small launcher (~$25k/kg) and more'],
+  ['opsPerSatelliteYear', 'Operations', 'per satellite per year, including ground-station time'],
+  ['fixedPerYear', 'Ground segment and mission operations', 'per year, whole constellation, including some data handling'],
 ]
 
 /** Cost breakdown at the selected altitude, low and high, with the assumptions behind it (physics.md §11). */
@@ -533,7 +533,7 @@ function CostTable({ cost, altitude_km }: { cost: CostResult; altitude_km: numbe
         </table>
       </div>
       <details className="cost-assumptions">
-        <summary>Cost assumptions (teaching estimates, US$)</summary>
+        <summary>Cost assumptions (teaching estimates, US$ about 2025)</summary>
         <div className="table-wrap">
           <table className="params">
             <thead>
@@ -557,12 +557,20 @@ function CostTable({ cost, altitude_km }: { cost: CostResult; altitude_km: numbe
           </table>
         </div>
         <p className="muted small">
-          Average unit cost follows a learning curve: each doubling of the number built multiplies unit cost by{' '}
-          {Math.round(cost.learningRate * 100)}% here (95% below 10 units, 90% for 10–50, 85% above 50). Steady state:
-          satellites are replaced as they reach end of life. Not included: development (non-recurring) cost, financing
-          and the time value of money, insurance, launch failures, spectrum and licensing. Cost per unit of service is
-          the yearly cost divided by the area actually imaged (imaging) or by the number of cells served (phone
-          service); it is a cost to collect or serve, not a market price. See physics.md §11.
+          Average unit cost follows a learning curve: each doubling of the number built multiplies the average cost per
+          unit by {Math.round(cost.learningRate * 100)}% at this quantity (95% up to 10 units, 90% to 50, 85% beyond;
+          SMAD 3rd ed., after Meisl & Morales). Replacements are later, cheaper units, so averaging over the first
+          batch is conservative. Steady state: satellites are replaced as they reach end of life. Launch is to the
+          release orbit; the descent to very low orbit is modelled in Explore, not costed here. Not included:
+          development (non-recurring) cost, financing and the time value of money, insurance, launch failures,
+          spectrum and licensing, large-scale data processing and archiving, company overheads and profit.
+        </p>
+        <p className="muted small">
+          Cost per unit of service is a cost to collect or serve, not a market price. Imaging: yearly cost ÷ the area
+          the sensors could collect, an upper bound (downlink limits are not modelled). Commercial imagery sells for
+          thousands of times more per km² because most collected area is never sold (cloud, duplicates, untasked
+          areas) and prices carry the exclusions above. Phone service: yearly cost ÷ the number of cells in the
+          covered band; most of those cells are over ocean or empty land. See physics.md §11.
         </p>
       </details>
     </div>

@@ -10,16 +10,18 @@ const service = { coverage: 'revisit' as const, latitudeMax_deg: 60, cellWidth_m
 
 describe('learning curve', () => {
   it('follows the quantity guidance: 95% below 10, 90% to 50, 85% above', () => {
-    expect([learningRate(5), learningRate(20), learningRate(200)]).toEqual([0.95, 0.9, 0.85])
+    expect([learningRate(5), learningRate(20), learningRate(50)]).toEqual([0.95, 0.9, 0.85])
   })
 
-  it('one unit costs the first-unit price; two units average (1 + L) / 2', () => {
+  it('Wright cumulative average: one unit costs the first-unit price; two average 95%', () => {
     expect(learningFactor(1)).toBe(1)
-    expect(learningFactor(2, 0.9)).toBeCloseTo((1 + 0.9) / 2, 12)
+    expect(learningFactor(2)).toBeCloseTo(0.95, 12)
+    expect(learningFactor(20)).toBeCloseTo(10 ** Math.log2(0.95) * 0.9, 12)
   })
 
-  it('average falls with quantity', () => {
-    expect(learningFactor(100, 0.85)).toBeLessThan(learningFactor(10, 0.85))
+  it('is continuous at 10 and 50 units and falls with quantity', () => {
+    for (const n of [10, 50]) expect(learningFactor(n + 1e-9)).toBeCloseTo(learningFactor(n), 6)
+    expect(learningFactor(100)).toBeLessThan(learningFactor(10))
   })
 })
 

@@ -23,30 +23,35 @@ export interface CostAssumptions {
   fixedPerYear: Range
 }
 
+/** US$, about 2025. */
 export const DEFAULT_COSTS: CostAssumptions = {
   busPerKg: [30e3, 100e3],
   payloadPerKg: [60e3, 250e3],
   launchPerKg: [6e3, 30e3],
-  opsPerSatelliteYear: [50e3, 200e3],
-  fixedPerYear: [1e6, 5e6],
+  opsPerSatelliteYear: [50e3, 400e3],
+  fixedPerYear: [1e6, 15e6],
 }
 
 /**
- * Learning rate by production quantity, after the New SMAD's guidance: 95% below 10 units, 90% for
- * 10–50, 85% above 50. Each doubling of quantity multiplies unit cost by this rate.
+ * Learning rate by production quantity (SMAD 3rd ed. §20, after Meisl & Morales, Aerospace Corp.): 95% for
+ * fewer than 10 units, 90% for 10–49, 85% for 50 or more. These are cumulative-average (Wright) rates.
  */
 export function learningRate(units: number): number {
-  return units < 10 ? 0.95 : units <= 50 ? 0.9 : 0.85
+  return units < 10 ? 0.95 : units < 50 ? 0.9 : 0.85
 }
 
-/** Average unit cost over n units on a Wright learning curve, as a fraction of the first unit. */
-export function learningFactor(units: number, rate = learningRate(units)): number {
-  if (units <= 1) return 1
-  // Average of k^b over k = 1..n, b = log2(rate).
-  const b = Math.log2(rate)
-  let sum = 0
-  for (let k = 1; k <= units; k++) sum += k ** b
-  return sum / units
+/**
+ * Average cost per unit over n units, as a fraction of the first unit, on a Wright cumulative-average curve:
+ * each doubling of the number built multiplies the average cost per unit by the learning rate. The rates are
+ * applied by segment (95% to 10 units, 90% from 10 to 50, 85% beyond) so cost does not jump at 10 or 50.
+ */
+export function learningFactor(units: number): number {
+  const n = Math.max(units, 1)
+  const seg = (from: number, to: number, rate: number) => (Math.min(n, to) / from) ** Math.log2(rate)
+  let f = seg(1, 10, 0.95)
+  if (n > 10) f *= seg(10, 50, 0.9)
+  if (n > 50) f *= seg(50, Infinity, 0.85)
+  return f
 }
 
 export interface CostBreakdown {
@@ -110,7 +115,10 @@ export interface ServiceContext {
   cellWidth_m: number | null
 }
 
-/** Area an imaging constellation actually collects per year: N × swath × ground speed × imaging duty × year, km². */
+/**
+ * Area an imaging constellation can collect per year: N × swath × ground speed × imaging duty × year, km².
+ * An upper bound: sensor-limited, with downlink capacity not modelled.
+ */
 export function areaImagedPerYear_km2(p: ConstellationPoint): number {
   if (!p.payload?.imagingSwath_m || !p.payload.imagingDuty) return NaN
   const groundSpeed = (circularSpeed_m_s(p.altitude_m) * R_EARTH) / radius_m(p.altitude_m)
@@ -125,7 +133,7 @@ export function areaImagedPerYear_km2(p: ConstellationPoint): number {
 export function serviceMetric(perYear: Range, p: ConstellationPoint, s: ServiceContext): ServiceMetric | null {
   const imaged = areaImagedPerYear_km2(p)
   if (Number.isFinite(imaged) && imaged > 0)
-    return { label: 'Cost per km² imaged', value: [perYear[0] / imaged, perYear[1] / imaged], unit: '$ per km²' }
+    return { label: 'Cost per km² imaged (upper-bound collection)', value: [perYear[0] / imaged, perYear[1] / imaged], unit: '$ per km²' }
   if (s.coverage === 'revisit') return null
   const area = bandArea_km2(s.latitudeMax_deg)
   if (s.cellWidth_m) {
@@ -138,7 +146,7 @@ export function serviceMetric(perYear: Range, p: ConstellationPoint, s: ServiceC
 export function constellationCost(p: ConstellationPoint, a: CostAssumptions, s: ServiceContext): CostResult | null {
   if (!p.feasible) return null
   const rate = learningRate(p.satellites)
-  const factor = learningFactor(p.satellites, rate)
+  const factor = learningFactor(p.satellites)
   const low = breakdown(p, a, 0, factor)
   const high = breakdown(p, a, 1, factor)
   return { low, high, learningRate: rate, service: serviceMetric([low.perYear, high.perYear], p, s) }
