@@ -39,6 +39,10 @@ export type InfoKey =
   | 'minElevation'
   | 'latitudeMax'
   | 'payloadExponent'
+  | 'mission'
+  | 'gsd'
+  | 'nesz'
+  | 'cellWidth'
 
 export const INPUT_INFO: Record<InfoKey, InputInfo> = {
   altitude: {
@@ -285,7 +289,43 @@ export const INPUT_INFO: Record<InfoKey, InputInfo> = {
     what: 'To keep the same performance on the ground, payloads get bigger as you fly higher: payload mass and power ∝ (h / 300 km)^k. The Explore payload is defined at 300 km.',
     typical: 'k ≈ 2.5 for an optical telescope at fixed resolution (aperture ∝ h, mass ∝ aperture^2.5). k ≈ 2 for a direct-to-device antenna at fixed link margin (area ∝ h²). k = 0 keeps the payload fixed.',
     drives: ['Satellite mass and power at each altitude', 'The right-hand wall of the mass-per-year curve'],
-    insight: 'This is what makes going higher expensive. Without it, higher is always better; with it, an optimum altitude appears. v2 will size payloads from real requirements instead.',
+    insight: 'This is what makes going higher expensive. Without it, higher is always better; with it, an optimum altitude appears. The mission payloads size the payload from a real requirement instead.',
+    affects: [],
+  },
+  mission: {
+    title: 'Mission payload',
+    what: 'What the constellation is for. Each mission states a requirement on the ground, and the payload needed to meet it is sized at every altitude: a telescope for imaging, a radar antenna, or a large antenna that talks to ordinary phones. "Scale Explore payload" uses the simpler (h / 300 km)^k rule instead.',
+    typical: 'Optical imaging and radar use revisit coverage; direct-to-device (phone) service needs continuous coverage. Choosing a mission sets those for you; you can still change them.',
+    drives: ['Payload mass, power and ram-facing area at each altitude', 'Where the optimum altitude lands'],
+    insight: 'Payloads scale differently with altitude. A telescope must grow in proportion to altitude to keep the same resolution, and its mass grows faster still, so imaging gains most from flying low. A radar antenna grows more slowly. A phone-link antenna grows as altitude squared, but each satellite then covers an area that also grows as altitude squared, so going low buys little.',
+    reference: 'Wertz, Everett & Puschell, Space Mission Engineering: The New SMAD (2011), ch. 16–17',
+    affects: [],
+  },
+  gsd: {
+    title: 'Ground sample distance (GSD)',
+    what: 'The size on the ground of one image pixel, looking straight down. The pixels are assumed matched to the telescope’s diffraction limit, so GSD ≈ 1.22 λ h / D: the aperture D must grow in proportion to altitude h to keep the same GSD.',
+    typical: 'Small imaging satellites: ~0.5–5 m. Very high resolution commercial imagery: ~0.3 m. Teaching default 0.8 m (≈ 0.25 m aperture at 300 km).',
+    drives: ['Telescope aperture (∝ h ÷ GSD)', 'Payload mass (∝ aperture^2.5) and power (∝ aperture², mainly thermal control of larger optics) — the app’s own estimates', 'Barrel size, which sets the minimum body frontal area', 'Swath: 12,000 pixels across × GSD'],
+    insight: 'Halving the altitude halves the aperture for the same picture — the core reason for very-low-orbit imaging. This simple formula is somewhat conservative compared with flown high-resolution imagers. Real cameras are also set by detector pixel size and focal length; resolution worsens when looking off to the side, which is not modelled.',
+    reference: 'Wertz et al., The New SMAD (2011), ch. 17',
+    affects: [],
+  },
+  nesz: {
+    title: 'Radar sensitivity (NESZ)',
+    what: 'Noise-equivalent sigma-zero: the faintest ground reflectivity the radar can tell apart from noise, in decibels. More negative is more sensitive. For a side-looking (stripmap) radar, NESZ ∝ R³ λ v / (P A²): range R cubed, over power P and antenna area A squared.',
+    typical: 'Small radar satellites: about −15 to −22 dB. Teaching default −17 dB at about 3 m stripmap resolution (finer resolution costs sensitivity). Each 3 dB more sensitivity doubles the imaging power.',
+    drives: ['Imaging power, and through it arrays and mass', 'Not the antenna size: that is set by the ambiguity limit, A ≥ 4 v λ R tan θ / c'],
+    insight: 'The antenna must be at least a minimum area to avoid range and Doppler ambiguities, and that minimum grows with slant range (designs that give up some resolution or swath can use smaller antennas). With the antenna at that minimum, imaging power grows only about in proportion to range, so radar gains much less from flying low than a telescope does.',
+    reference: 'Curlander & McDonough, Synthetic Aperture Radar: Systems and Signal Processing (1991); Freeman et al., "The myth of the minimum SAR antenna area constraint", IEEE TGRS 38(1), 2000',
+    affects: [],
+  },
+  cellWidth: {
+    title: 'Cell size (phone service)',
+    what: 'Width on the ground of one beam from the satellite. Smaller cells reuse the same radio spectrum more often, giving more capacity. An antenna of side L makes a beam about λ/L wide, so L ≈ λ d / cell width, where d is the slant range to the phone.',
+    typical: 'Direct-to-device concepts: tens of kilometres. Teaching default 50 km at 2 GHz. The phone uplink also sets a minimum antenna gain; at these cell sizes the beam requirement is much larger (≈ 60×).',
+    drives: ['Antenna area (∝ slant range²)', 'Antenna mass and its drag in VLEO'],
+    insight: 'Big antennas are a real drag penalty in very low orbit: even edge-on, a several-square-metre panel adds grazing drag. Lower orbits shrink the antenna but need many more satellites for continuous coverage. Payload power is scaled to give the same power per cell. Not in this metric: the phone link margin and latency, which favour lower orbits.',
+    reference: '3GPP TR 38.811 and TR 38.821 §6.1 (non-terrestrial networks: scenarios and link-budget parameters)',
     affects: [],
   },
 }

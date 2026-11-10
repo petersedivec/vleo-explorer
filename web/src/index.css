@@ -1390,3 +1390,23 @@ button.link.small {
 button.link.strong {
   font-weight: 600;
 }
+
+/* ── Constellation cost ───────────────────────────────────────────────── */
+
+.cost-section {
+  margin: 24px 0 8px;
+}
+
+.cost-section h2 {
+  font-size: 1rem;
+  margin: 0 0 8px;
+}
+
+.cost-assumptions {
+  margin-top: 12px;
+}
+
+.cost-assumptions summary {
+  cursor: pointer;
+  font-weight: 600;
+}

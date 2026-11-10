@@ -2,6 +2,7 @@
 
 import { DEG, G0, R_EARTH, YEAR_S } from './constants'
 import { period_s, radius_m } from './orbit'
+import { DEFAULT_REQUIREMENTS, payloadFor, type MissionKind, type MissionRequirements, type PayloadDesign } from './missions'
 import { PROPULSION_PRESETS } from './propulsion'
 import { evaluateSatellite, type SatelliteInputs, type SatelliteResult } from './satellite'
 
@@ -20,6 +21,13 @@ export interface ConstellationInputs {
   /** Continuous coverage: highest latitude that must be covered. */
   latitudeMax_deg: number
   /**
+   * How the payload is sized at each altitude (Design mode): from a mission requirement (§9), or by
+   * scaling the Explore payload with payloadExponent.
+   */
+  mission: MissionKind
+  /** Requirements for the mission payloads; the phone-link minimum elevation is taken from minElevation_deg. */
+  requirements: MissionRequirements
+  /**
    * How payload mass and power scale with altitude to keep the same ground performance:
    * payload ∝ (h / h_ref)^k. 0 keeps the payload fixed; ~2.5 for an optical telescope at fixed
    * resolution; ~2 for a direct-to-device antenna at fixed link margin. Design mode only.
@@ -36,6 +44,8 @@ export const DEFAULT_CONSTELLATION: ConstellationInputs = {
   passesPerOrbit: 1,
   minElevation_deg: 25,
   latitudeMax_deg: 60,
+  mission: 'optical',
+  requirements: DEFAULT_REQUIREMENTS,
   payloadExponent: 2.5,
   referenceAltitude_m: 300e3,
 }
@@ -86,8 +96,12 @@ export interface ConstellationPoint {
   /** Wet mass used: in Design mode, dry mass plus propellant and tank sized for the design life. */
   wetMass_kg: number
   propellant_kg: number
-  /** Payload scale factor applied at this altitude (design mode). */
+  /** Payload scale factor applied at this altitude (Design mode, scaled payload); NaN for mission payloads. */
   payloadScale: number
+  /** Requirement-sized payload at this altitude (Design mode, mission payloads), else null. */
+  payload: PayloadDesign | null
+  /** Payload mass actually flown (for cost). */
+  payloadMass_kg: number
   life_s: number
   replacementsPerYear: number
   deploymentMass_kg: number
@@ -97,13 +111,24 @@ export interface ConstellationPoint {
 }
 
 export function evaluateConstellation(sat: SatelliteInputs, c: ConstellationInputs, altitude_m: number): ConstellationPoint {
-  const scale = sat.mode === 'design' ? (altitude_m / c.referenceAltitude_m) ** c.payloadExponent : 1
-  const satellite = evaluateSatellite({
-    ...sat,
-    altitude_m,
-    payloadMass_kg: sat.payloadMass_kg * scale,
-    payloadPower_W: sat.payloadPower_W * scale,
-  })
+  const design = sat.mode === 'design'
+  const payload =
+    design && c.mission !== 'scaled'
+      ? payloadFor(c.mission, altitude_m, { ...c.requirements, minElevation_deg: c.minElevation_deg })
+      : null
+  const scale = payload ? NaN : design ? (altitude_m / c.referenceAltitude_m) ** c.payloadExponent : 1
+  const satellite = evaluateSatellite(
+    payload
+      ? {
+          ...sat,
+          altitude_m,
+          payloadMass_kg: payload.mass_kg,
+          payloadPower_W: payload.power_W,
+          payloadFrontalArea_m2: payload.frontalArea_m2,
+          payloadDragArea_m2: payload.dragArea_m2,
+        }
+      : { ...sat, altitude_m, payloadMass_kg: sat.payloadMass_kg * scale, payloadPower_W: sat.payloadPower_W * scale },
+  )
   const angle =
     c.coverage === 'revisit'
       ? centralAngleFromOffNadir(altitude_m, c.offNadir_deg)
@@ -133,6 +158,8 @@ export function evaluateConstellation(sat: SatelliteInputs, c: ConstellationInpu
     wetMass_kg: wetMass,
     propellant_kg: propellant,
     payloadScale: scale,
+    payload,
+    payloadMass_kg: payload ? payload.mass_kg : sat.payloadMass_kg * (Number.isNaN(scale) ? 1 : scale),
     life_s: life,
     replacementsPerYear: replacements,
     deploymentMass_kg: feasible ? satellites * wetMass : NaN,
@@ -143,6 +170,17 @@ export function evaluateConstellation(sat: SatelliteInputs, c: ConstellationInpu
 
 export function sweepConstellation(sat: SatelliteInputs, c: ConstellationInputs, altitudes_m: number[]) {
   return altitudes_m.map((h) => evaluateConstellation(sat, c, h))
+}
+
+/**
+ * Lowest and highest altitudes whose mass to orbit per year is within `margin` of the minimum: the
+ * optimum is only as sharp as this band (ties within 10%, as elsewhere in the app).
+ */
+export function nearOptimumBand(points: ConstellationPoint[], margin = 0.1): [number, number] | null {
+  const best = optimumAltitude(points)
+  if (!best) return null
+  const near = points.filter((p) => p.feasible && p.massPerYear_kg <= best.massPerYear_kg * (1 + margin)).map((p) => p.altitude_m)
+  return [Math.min(...near), Math.max(...near)]
 }
 
 /** Altitude with the lowest mass to orbit per year, among feasible points. */

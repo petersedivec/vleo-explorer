@@ -14,6 +14,7 @@ import {
 import { eclipseFraction } from './power'
 import { electricPower_W, massFlow_kg_s, PROPULSION_PRESETS, thrustToPower_N_W, type PropulsionClass } from './propulsion'
 import { DEFAULT_INPUTS, evaluateSatellite, type SatelliteInputs } from './satellite'
+import { d2dPayload, opticalPayload, sarPayload, type PayloadDesign } from './missions'
 
 const close = (actual: number, expected: number, rel: number) =>
   Number.isFinite(expected)
@@ -94,6 +95,7 @@ function toInputs(g: GoldenSpacecraft, thruster: string): SatelliteInputs {
     payloadMass_kg: g.payload_mass_kg,
     payloadPower_W: g.payload_power_W,
     payloadFrontalArea_m2: g.payload_frontal_area_m2,
+    payloadDragArea_m2: g.payload_drag_area_m2,
     busFixedMass_kg: g.bus_fixed_mass_kg,
     busPower_W: g.bus_power_W,
     structureFraction: g.structure_fraction,
@@ -167,5 +169,24 @@ describe('as-built mode', () => {
     close(r.drag_N, g.drag_N, 1e-9)
     close(r.missionLife_s, g.mission_life_s, 1e-9)
     close(r.naturalLifetime_s, g.natural_lifetime_s, 2e-3)
+  })
+})
+
+describe('mission payloads', () => {
+  const same = (ts: PayloadDesign, py: { size: number; mass_kg: number; power_W: number; frontal_area_m2: number; drag_area_m2: number }) => {
+    close(ts.size, py.size, 1e-12)
+    close(ts.mass_kg, py.mass_kg, 1e-12)
+    close(ts.power_W, py.power_W, 1e-12)
+    close(ts.frontalArea_m2, py.frontal_area_m2, 1e-12)
+    close(ts.dragArea_m2, py.drag_area_m2, 1e-12)
+  }
+  it.each(golden.missions)('h=$altitude_m', (g) => {
+    same(opticalPayload(g.altitude_m, g.gsd_m), g.optical)
+    same(sarPayload(g.altitude_m, g.nesz_dB), g.sar)
+    const d = d2dPayload(g.altitude_m, g.cell_width_m, g.min_elevation_deg)
+    same(d, g.d2d)
+    close(opticalPayload(g.altitude_m, g.gsd_m).imagingSwath_m!, g.optical.imaging_swath_m, 1e-12)
+    close(sarPayload(g.altitude_m, g.nesz_dB).imagingSwath_m!, g.sar.imaging_swath_m, 1e-12)
+    expect(d.limitedBy.startsWith('cell size')).toBe(g.d2d.beam_limited)
   })
 })

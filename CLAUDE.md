@@ -37,7 +37,7 @@ constellation size, and which thruster does the job best where.
 | `PLAN.md` | Goals, scope, roadmap, **decision log** (append new decisions there) |
 | `docs/physics.md` | Equation spec, presets, sources |
 | `reference/` | Python reference model (physics, atmosphere, closed sizing loop, as-built), NRLMSIS table generator, validation tests, golden vectors |
-| `web/src/model/` | Pure TypeScript model: `satellite.ts` (closed sizing loop, as-built), `atmosphere.ts`, `drag.ts`, `propulsion.ts` (presets), `propulsionTrade.ts`, `constellation.ts`, `heritage.ts` |
+| `web/src/model/` | Pure TypeScript model: `satellite.ts` (closed sizing loop, as-built), `atmosphere.ts`, `drag.ts`, `propulsion.ts` (presets), `propulsionTrade.ts`, `constellation.ts`, `missions.ts` (requirement-based payloads), `cost.ts`, `heritage.ts` |
 | `web/src/data/` | `atmosphere.json` (generated), `heritage.ts` (missions, sourced), `propulsion101.ts` (primer content) |
 | `web/src/ui/` | React UI. Tabs: `Overview`, `Heritage`, Explore (`Controls`/`Cards`/`ExploreCharts`), `PropulsionTrade`, `Constellation`; sub-page `Propulsion101` (reached by links, not a main tab) |
 | `web/src/ui/inputInfo.ts` | Explanation text for every input (owner reviews this) |
@@ -66,8 +66,9 @@ Before pushing: run all of the above and check the app in a browser at desktop a
 ## Conventions
 
 - SI units inside the model; unit-suffixed names (`thrust_N`, `altitude_m`). No React in `web/src/model/`.
-- Teaching numbers live in one place (`propulsion.ts` presets, `heritage.ts`, `inputInfo.ts`,
-  `propulsion101.ts`); UI tables are generated from them so they cannot drift.
+- Teaching numbers live in one place (`propulsion.ts` presets, `missions.ts` `MISSION_PARAMS`, `cost.ts`
+  `DEFAULT_COSTS`, `heritage.ts`, `inputInfo.ts`, `propulsion101.ts`); UI tables are generated from them so they
+  cannot drift. The Python reference mirrors presets and mission parameters; golden tests catch drift.
 - Commit to `main` (solo project); CI deploys. Commit messages explain what and why.
 - Plain English in UI text; define jargon on first use.
 
@@ -77,6 +78,9 @@ v1.0–v1.4 built: single-satellite sizing loop with As-built mode; heritage mis
 model-vs-reality checks; propulsion trade (winner map, optimal-Isp curve, equal-mass comparison, thruster
 wear model, size presets, what-if wear life, fairness toggles); constellation sizing (satellites, replacement,
 mass to orbit per year, optimum altitude); Overview landing page; Propulsion 101 sub-page (fact-checked).
+v1.5: electrospray preset reviewed (wear 300 N·s, band 50–2,000); Python reference for the sizing loop and
+mission payloads (golden-checked); requirement-based payloads (optical, radar, phone service); cost model
+with low–high bands and cost per unit of service; 10% near-optimum bands.
 
 ## Open items and next steps
 
@@ -86,11 +90,12 @@ mass to orbit per year, optimum altitude); Overview landing page; Propulsion 101
   In-Space Propulsion chapter (nasa.gov was not reachable from the cloud sessions so far).
 
 **Next to build (agreed, in rough order)**
-1. Extend the Python reference model to constellation and propulsion trade (sizing loop done Nov 2026).
-2. Requirement-based payload sizing for the three missions — optical (GSD), SAR (NESZ, ambiguity-limited
-   antenna), direct-to-device (uplink-limited antenna) — replacing the (h/300 km)^k payload scaling.
-3. Cost model: satellites, launch, replacement and operations → cost per year and cost per unit of service
-   (dollars as low–high bands, 1–2 significant figures, breakdown always visible).
+1. Extend the Python reference model to constellation, cost and propulsion trade (sizing loop and mission
+   payloads done Nov 2026).
+2. *(Proposed, awaiting owner)* Editable cost assumptions and a tornado chart (which assumption moves cost
+   per year most).
+3. *(Proposed, awaiting owner)* Mission payloads in Explore (today only on the Constellation tab); Constellation
+   state in the URL.
 4. Coverage simulator and 2D revisit map to check analytic satellite counts; ground stations and downlink.
 5. Time-varying solar cycle (pick a launch year).
 6. Orbit-type choice (dawn-dusk / noon sun-synchronous / other) that sets the sun angle β automatically.

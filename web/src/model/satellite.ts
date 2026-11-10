@@ -45,6 +45,11 @@ export interface SatelliteInputs {
   payloadPower_W: number
   /** Ram-facing area the payload forces on the body (e.g. a telescope barrel). */
   payloadFrontalArea_m2: number
+  /**
+   * Extra ram-facing area a payload adds outside the body, e.g. an antenna flown edge-on to the flow
+   * (its edge plus the grazing-incidence term). Added to the drag area.
+   */
+  payloadDragArea_m2: number
   busFixedMass_kg: number
   busPower_W: number
   structureFraction: number
@@ -104,6 +109,7 @@ export const DEFAULT_INPUTS: SatelliteInputs = {
   payloadMass_kg: 20,
   payloadPower_W: 40,
   payloadFrontalArea_m2: 0,
+  payloadDragArea_m2: 0,
   busFixedMass_kg: 15,
   busPower_W: 30,
   structureFraction: 0.25,
@@ -341,7 +347,7 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
   const wearLimited = !inputs.ignoreThrusterWear && !inputs.idealThruster && Number.isFinite(unitImpulse)
 
   for (; iterations < MAX_ITERATIONS; iterations++) {
-    const dragArea = bodyArea(dryMass) + kArray * arrayArea
+    const dragArea = bodyArea(dryMass) + kArray * arrayArea + inputs.payloadDragArea_m2
     stormDrag = drag_N(rho * inputs.stormMargin, v, inputs.cd, dragArea)
     const fireThrust = stormDrag / duty
     // Units: enough for the storm-sized thrust, and enough total impulse to cancel nominal drag for the life.
@@ -390,7 +396,7 @@ function evaluateDesign(inputs: SatelliteInputs): SatelliteResult {
   const common = lifeAndEnvironment(
     { ...inputs, totalImpulse_Ns: Math.min(inputs.totalImpulse_Ns, wearImpulse) },
     dryMass,
-    bodyFrontal + kArray * arrayArea,
+    bodyFrontal + kArray * arrayArea + inputs.payloadDragArea_m2,
   )
   const sizedThrust = stormDrag / duty
   const tooHeavy = converged && dryMass > MASS_GROWTH_LIMIT * dragFreeDryMass

@@ -1128,6 +1128,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1184,6 +1185,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1240,6 +1242,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1280,6 +1283,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1320,6 +1324,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1376,6 +1381,7 @@
     "payload_mass_kg": 2,
     "payload_power_W": 5,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 3,
     "bus_power_W": 5,
     "structure_fraction": 0.25,
@@ -1432,6 +1438,7 @@
     "payload_mass_kg": 2,
     "payload_power_W": 5,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 3,
     "bus_power_W": 5,
     "structure_fraction": 0.25,
@@ -1488,6 +1495,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1544,6 +1552,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1600,6 +1609,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.4,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1656,6 +1666,7 @@
     "payload_mass_kg": 150,
     "payload_power_W": 300,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1698,6 +1709,63 @@
    "thruster_power_W": 75,
    "storm_drag_N": 0.0036714263663203033,
    "thruster_units": 4
+  },
+  {
+   "name": "Hall, 260 km, edge-on antenna drag",
+   "inputs": {
+    "altitude_m": 260000.0,
+    "inclination_deg": 53.0,
+    "beta_deg": 0.0,
+    "f107": 150.0,
+    "ap": 15.0,
+    "atmosphere": "msis",
+    "storm_margin": 3.0,
+    "payload_mass_kg": 58,
+    "payload_power_W": 100,
+    "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.45,
+    "bus_fixed_mass_kg": 15.0,
+    "bus_power_W": 30.0,
+    "structure_fraction": 0.25,
+    "body_frontal_area_m2": null,
+    "bulk_density_kg_m3": 400.0,
+    "shape_factor": 0.6,
+    "cd": 2.2,
+    "array_orientation": "edgeOn",
+    "cell_efficiency": 0.3,
+    "packing_factor": 0.85,
+    "life_degradation": 0.85,
+    "array_areal_mass_kg_m2": 3.0,
+    "ppu_specific_mass_kg_W": 0.02,
+    "thrust_in_eclipse": true,
+    "propellant_kg": 8.0,
+    "design_life_s": 157788000.0,
+    "total_impulse_Ns": null,
+    "wear": true
+   },
+   "thruster": "hall",
+   "drag_free_dry_mass_kg": 107.34287397738768,
+   "eclipse_fraction": 0.4106166748265052,
+   "duty": 1.0,
+   "loop_gain": 0.16673773448903395,
+   "density_kg_m3": 5.569292144857977e-11,
+   "drag_N": 0.0037701700627808766,
+   "wet_mass_kg": 140.44509414589444,
+   "propellant_life_s": 24970714.432589684,
+   "impulse_life_s": 159144014.7284603,
+   "mission_life_s": 24970714.432589684,
+   "natural_lifetime_s": 816350.0187532478,
+   "disposal_time_s": 769849.1061436929,
+   "feasible": true,
+   "infeasibility": null,
+   "dry_mass_kg": 132.44509414589444,
+   "mass_growth": 1.2338508299469853,
+   "array_area_m2": 4.110303463271573,
+   "body_frontal_area_m2": 0.2871674248848138,
+   "drag_area_m2": 1.024888667313824,
+   "thruster_power_W": 190.1455109803033,
+   "storm_drag_N": 0.011310510188342629,
+   "thruster_units": 12
   }
  ],
  "as_built": [
@@ -1714,6 +1782,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1762,6 +1831,7 @@
     "payload_mass_kg": 20.0,
     "payload_power_W": 40.0,
     "payload_frontal_area_m2": 0.0,
+    "payload_drag_area_m2": 0.0,
     "bus_fixed_mass_kg": 15.0,
     "bus_power_W": 30.0,
     "structure_fraction": 0.25,
@@ -1796,6 +1866,132 @@
    "feasible": false,
    "thrust_margin": 0.12957232926824577,
    "thruster_power_W": 48.654485379734425
+  }
+ ],
+ "missions": [
+  {
+   "altitude_m": 200000.0,
+   "gsd_m": 0.8,
+   "nesz_dB": -17,
+   "cell_width_m": 50000.0,
+   "min_elevation_deg": 25,
+   "optical": {
+    "size": 0.16775,
+    "mass_kg": 6.519755528208837,
+    "power_W": 11.256025000000001,
+    "frontal_area_m2": 0.05487312187500001,
+    "drag_area_m2": 0.0,
+    "imaging_swath_m": 9600.0
+   },
+   "sar": {
+    "size": 0.5136718556121473,
+    "mass_kg": 22.705077834182212,
+    "power_W": 59.3878746921652,
+    "frontal_area_m2": 0.0,
+    "drag_area_m2": 0.06129652119625229,
+    "imaging_swath_m": 32529.688867482277
+   },
+   "d2d": {
+    "size": 1.7724050108946168,
+    "mass_kg": 37.724050108946166,
+    "power_W": 48.27485786411368,
+    "frontal_area_m2": 0.0,
+    "drag_area_m2": 0.25720005288103737,
+    "beam_limited": true
+   }
+  },
+  {
+   "altitude_m": 300000.0,
+   "gsd_m": 0.8,
+   "nesz_dB": -20,
+   "cell_width_m": 30000.0,
+   "min_elevation_deg": 30,
+   "optical": {
+    "size": 0.251625,
+    "mass_kg": 17.966333578276647,
+    "power_W": 25.326056249999993,
+    "frontal_area_m2": 0.12346452421875,
+    "drag_area_m2": 0.0,
+    "imaging_swath_m": 9600.0
+   },
+   "sar": {
+    "size": 0.7629023034474276,
+    "mass_kg": 26.443534551711416,
+    "power_W": 138.49447817850594,
+    "frontal_area_m2": 0.0,
+    "drag_area_m2": 0.08428402715063803,
+    "imaging_swath_m": 39943.644888540315
+   },
+   "d2d": {
+    "size": 7.947092744197203,
+    "mass_kg": 99.47092744197204,
+    "power_W": 69.06360198732479,
+    "frontal_area_m2": 0.0,
+    "drag_area_m2": 0.8382023761082604,
+    "beam_limited": true
+   }
+  },
+  {
+   "altitude_m": 450000.0,
+   "gsd_m": 0.8,
+   "nesz_dB": -15,
+   "cell_width_m": 100000.0,
+   "min_elevation_deg": 20,
+   "optical": {
+    "size": 0.3774375,
+    "mass_kg": 49.50939354233585,
+    "power_W": 56.98362656249999,
+    "frontal_area_m2": 0.27779517949218746,
+    "drag_area_m2": 0.0,
+    "imaging_swath_m": 9600.0
+   },
+   "sar": {
+    "size": 1.1278666941729492,
+    "mass_kg": 31.91800041259424,
+    "power_W": 76.64138454890735,
+    "frontal_area_m2": 0.0,
+    "drag_area_m2": 0.11649841643024164,
+    "imaging_swath_m": 49109.506059334795
+   },
+   "d2d": {
+    "size": 2.668898294669802,
+    "mass_kg": 46.68898294669802,
+    "power_W": 291.4929385038775,
+    "frontal_area_m2": 0.0,
+    "drag_area_m2": 0.3501905118966637,
+    "beam_limited": true
+   }
+  },
+  {
+   "altitude_m": 600000.0,
+   "gsd_m": 0.8,
+   "nesz_dB": -17,
+   "cell_width_m": 2000000.0,
+   "min_elevation_deg": 25,
+   "optical": {
+    "size": 0.50325,
+    "mass_kg": 101.6329304500719,
+    "power_W": 101.30422499999997,
+    "frontal_area_m2": 0.493858096875,
+    "drag_area_m2": 0.0,
+    "imaging_swath_m": 9600.0
+   },
+   "sar": {
+    "size": 1.4827758640603597,
+    "mass_kg": 37.24163796090539,
+    "power_W": 140.6115398455222,
+    "frontal_area_m2": 0.0,
+    "drag_area_m2": 0.14684625387909936,
+    "imaging_swath_m": 56923.69286532585
+   },
+   "d2d": {
+    "size": 0.21287013369524097,
+    "mass_kg": 22.12870133695241,
+    "power_W": 321.9912508164455,
+    "frontal_area_m2": 0.0,
+    "drag_area_m2": 0.06103876081441208,
+    "beam_limited": false
+   }
   }
  ]
 }

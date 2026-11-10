@@ -141,7 +141,8 @@ Local scale height from the MSIS tables: H(h) = −1 / (d ln ρ / dh).
 - **Sun-tracking arrays** rotate once per orbit; their orbit-averaged projected area in the
   ram direction is ≈ (2/π) × array area (k_track = 0.64), plus the grazing term.
 
-Reference area: A_ref = A_body + k_array · A_array + k_graze · A_panel(other).
+Reference area: A_ref = A_body + k_array · A_array + A_payload, where A_payload is ram-facing area a payload
+adds outside the body, e.g. an edge-on antenna's edge plus k_graze × its face (§9).
 
 ---
 
@@ -427,43 +428,75 @@ result within 10% of the model range counts as "within".
 
 ---
 
-## 9. Missions [draft — v1 phase 4]
+## 9. Missions: requirement-based payloads [v1.5]
+
+Each mission states a requirement on the ground; the payload that meets it is sized at every altitude
+(Constellation tab, Design mode). Code: `web/src/model/missions.ts` (parameters in `MISSION_PARAMS`);
+Python reference: `reference/vleo_model.py` (§9 functions), checked against each other by golden vectors.
+All reference values below are **teaching estimates** with the reasoning given; none describes a product.
 
 ### 9.1 Optical Earth observation
 
-- Diffraction-limited ground sample distance at nadir: GSD = Q λ h / D.
-  Q = 1.22 (Rayleigh convention, stated in the app), λ = 550 nm.
-- Required aperture: D = Q λ h / GSD.
-- Payload mass and power scale from a reference instrument (teaching default:
-  D_ref = 0.5 m, m_ref = 100 kg, P_ref = 100 W) with exponent k = 2.5:
-  m_payload = m_ref (D / D_ref)^k.
-- Payload frontal area: π (0.65 D)² (telescope barrel, ram-facing if pointed nadir).
-- Constraint: minimum solar elevation at the target (teaching default 30°). Dawn-dusk SSO
-  flagged as unsuitable.
+- Pixels matched to the diffraction limit, so the ground sample distance at nadir is GSD ≈ Q λ h / D, Q = 1.22
+  (Rayleigh convention), λ = 550 nm. (GSD itself is pixel pitch × h / focal length; this sets the focal length
+  to match. The formula is somewhat conservative against flown high-resolution imagers.) Required aperture: **D = Q λ h / GSD** (∝ h). Default GSD 0.8 m → D ≈ 0.25 m at 300 km.
+- Mass and power scale from a reference instrument (D_ref = 0.5 m, m_ref = 100 kg, P_ref = 100 W):
+  m = m_ref (D / D_ref)^2.5, P = P_ref (D / D_ref)². Exponents are the app's own estimates (the New SMAD's
+  scaling rule uses the aperture ratio cubed for both): mass would grow as D³ at fixed focal ratio and density,
+  lightweighted optics pull it down to ≈ 2–3; at fixed GSD the detector does not change, so power growth is
+  mainly thermal control of larger optics, taken as ≈ D².
+- Imaging swath = 12,000 pixels across × GSD (9.6 km at 0.8 m); imaging duty 10% of the orbit. Used only for
+  cost per km² imaged (§11).
+- Telescope barrel (compact, folded design): diameter 1.3 D, length 1.5 D. Pointed at nadir, its **side**
+  faces the flow, so the body's frontal area is at least 1.3 D × 1.5 D (§7 step 3).
+- Not modelled: detector-limited (rather than diffraction-limited) designs, off-nadir resolution loss,
+  minimum solar elevation (dawn-dusk orbits are poor for optical imaging).
 
 ### 9.2 Synthetic aperture radar (stripmap)
 
-- Sensitivity: NESZ ∝ R³ λ v / (P_avg A²). Scaled from a reference design:
-  P_avg = P_ref · (R/R_ref)³ · (v/v_ref) · (A_ref/A)² · (NESZ_ref / NESZ).
-- Ambiguity floor on antenna area: A_min = 4 v λ R tan θ / c (θ = incidence angle).
-- Default: A = 1.2 × A_min (teaching default margin). With A ∝ R, P_avg ∝ R.
 - Slant range from the incidence angle θ at the ground: R = −R⊕ cos θ + √(R⊕² cos² θ + 2 R⊕ h + h²).
-- Antenna flown with its face pointing cross-track: ram-facing area ≈ antenna length ×
-  thickness, plus k_graze × A.
+  Earth curvature makes the look angle smaller than θ, so h < R < h / cos θ.
+- **Ambiguity floor on antenna area:** A_min = 4 v λ R tan θ / c. Antenna A = 1.2 A_min (margin), length ÷
+  height = 8. X band (9.65 GHz, λ ≈ 3.1 cm), θ = 30°. Check: ≈ 1.0 m² at 500 km (A ≈ 1.25 m², 3.2 m × 0.4 m),
+  the small end of flown small radar satellites (≈ 1.3–8 m²). The floor binds only when a design wants both the
+  best azimuth resolution and the full beam-limited swath; designs that give up some of either can use smaller
+  antennas (Freeman et al., IEEE TGRS 38(1), 2000).
+- **Sensitivity:** NESZ ∝ R³ λ v / (P_avg A²). Imaging power scaled from a reference design:
+  P_img = P_ref (R/R_ref)³ (v/v_ref) (A_ref/A)² · 10^((NESZ_ref − NESZ)/10), with P_ref = 1,000 W (DC while
+  imaging) at h_ref = 500 km, A_ref = 1.2 A_min(h_ref), NESZ_ref = −17 dB at ≈ 3 m ground-range resolution
+  (NESZ ∝ 1 / resolution; a radar-equation check with ≈ 300 W average RF and typical losses gives ≈ −17 dB). With A ∝ v R, **P_img ∝ R / v**,
+  roughly ∝ R: radar gains far less from low altitude than optics.
+- Orbit-average payload power = 20 W standby + 10% imaging duty × P_img. Mass = 15 kg electronics + 15 kg/m² × A.
+- Stripmap swath ≈ λ R / (H cos θ), H = antenna height (elevation beam spread over the slant range, projected on
+  the ground): ≈ 52 km at 500 km. Used only for cost per km² imaged (§11).
+- Drag: long axis along track, face looking sideways, so the flow sees the antenna's edge (height × 0.1 m)
+  plus grazing drag k_graze A. This is extra ram-facing area outside the body (`payloadDragArea_m2`, §3).
+- Not modelled: battery for imaging bursts, resolution and swath trades, ScanSAR/spotlight modes.
 
-### 9.3 Direct-to-device communications (uplink-limited)
+### 9.3 Direct-to-device communications
 
-- Slant range at minimum user elevation ε: d = √(r² − R⊕² cos² ε) − R⊕ sin ε.
-- Link: C/N₀ = EIRP_phone + G_sat − L_fs − L_other − 10 log₁₀ T_sys − 10 log₁₀ k_B (dB),
-  L_fs = 20 log₁₀(4π d / λ).
-- Required gain → antenna area: A_link = G λ² / (4π η_ant).
-- Beam-size requirement: aperture side L ≈ λ d / w_beam (w_beam = target beam width on ground)
-  → A_beam = L².
-- Antenna area A = max(A_link, A_beam), both ∝ d² ∝ ~h².
-- Teaching defaults: f = 2 GHz, phone EIRP −7 dBW, T_sys = 500 K, required C/N₀ = 50 dB-Hz,
-  L_other = 3 dB, η_ant = 0.6, w_beam = 50 km, ε_min = 30°.
-- Antenna faces nadir → edge-on to the flow: drag area k_graze × A, plus mass σ_ant A
-  (teaching default 10 kg/m²).
+- Slant range at minimum user elevation ε: d = √(r² − R⊕² cos² ε) − R⊕ sin ε (ε shared with §10.3).
+- **Uplink:** C/N₀ = EIRP_phone + G_sat − L_fs − L_other − 10 log₁₀ T_sys − 10 log₁₀ k_B (dB),
+  L_fs = 20 log₁₀(4π d / λ) → required G_sat → A_link = G λ² / (4π η_ant). Defaults follow 3GPP TR 38.821
+  §6.1 (handheld 23 dBm, 0 dBi → −7 dBW); T_sys = 500 K is an estimate (the 3GPP S-band set implies ≈ 800 K,
+  which does not change the result because the cell size dominates by ≈ 60×).
+- **Cell size:** a beam about λ/L wide covers a cell of width w at range d, so L ≈ λ d / w → A_beam = L².
+- Antenna area A = max(A_link, A_beam), both ∝ d². Defaults: f = 2 GHz, phone EIRP −7 dBW,
+  T_sys = 500 K, required C/N₀ = 50 dB-Hz, L_other = 3 dB, η_ant = 0.6, w = 50 km. At these values the
+  cell size, not the uplink, sets the antenna (≈ 3.8 m² at 300 km, 25° elevation).
+- Payload power: per beam, delivering the same power flux to the ground needs transmit power ∝ d² / G, and
+  G ∝ A ∝ d², so the two cancel; but a higher satellite sees more cells. Power is therefore scaled with
+  footprint area to keep the same power per cell: P = 100 W × (1 − cos λ) / (1 − cos λ_ref), λ_ref at 300 km
+  and 25° (§10.1). Mass = 20 kg electronics + 10 kg/m² × A.
+- Drag: faces nadir, so edge-on: √A × 0.1 m edge plus k_graze A, outside the body.
+- Not modelled: capacity per beam, spectrum sharing, downlink link margin and latency (which favour lower
+  orbits), and edge-of-coverage cells being stretched by ≈ 1/sin ε.
+
+### 9.4 How the payload enters the satellite
+
+Payload mass and power replace the Explore payload in the sizing loop (§7). The telescope barrel sets a
+minimum body frontal area; antennas add `payloadDragArea_m2` to the reference area. As-built spacecraft
+are not resized. "Scale Explore payload" keeps the simpler (h / 300 km)^k rule (§10.4) for comparison.
 
 ---
 
@@ -508,7 +541,7 @@ simulation in v2. Scales ∝ ~1/λ² ∝ ~1/h².
   as (h / h_ref)^k, h_ref = 300 km (where the Explore payload is defined). Teaching defaults: k = 2.5
   for optical imaging at fixed resolution (aperture ∝ h, mass ∝ aperture^~2.5); k = 2 for a
   direct-to-device antenna at fixed link margin (area ∝ h²); k = 0 keeps the payload fixed. Design mode
-  only; v2 replaces this with requirement-based payload sizing (§9).
+  only. The default is now requirement-based payload sizing (§9); this scaling remains as an option.
 - At each altitude the satellite is sized by the closed loop (§7) with the scaled payload. In Design
   mode it carries exactly the propellant needed to hold altitude for the design life,
   m_p = D · t_design / (g₀ Isp), plus tank (§5.7), so its life is min(design life, total-impulse life).
@@ -516,26 +549,45 @@ simulation in v2. Scales ∝ ~1/λ² ∝ ~1/h².
   spacecraft and its propellant are fixed.
 - **Replacement rate** = N / t_life. **Mass to orbit per year** = replacement rate × wet mass
   (steady state; excludes launch-vehicle adapters and dispensers). **Deployment mass** = N × wet mass.
-- **Optimum altitude** = minimum of mass to orbit per year over feasible altitudes. Left wall: drag
+- **Optimum altitude** = minimum of mass to orbit per year over feasible altitudes. Because curves can be
+  flat, the app also shows the band of altitudes within 10% of that minimum (`nearOptimumBand`). Left wall: drag
   (short lives, larger power systems, no closure). Right wall: payload growth. For continuous coverage
   with k = 2, footprint area (∝ ~h²) cancels payload growth and the optimum moves to the top of the range.
 
-## 11. Cost [draft — v1 phase 4]
+## 11. Cost [v1.5]
 
-All parameters are low–high ranges (teaching assumptions); outputs shown as bands, rounded
-to 1–2 significant figures.
+Code: `web/src/model/cost.ts`; shown on the Constellation tab. Every parameter is a low–high range of
+**teaching assumptions** (not market data); results are bands rounded to two significant figures, with the
+breakdown always visible. Steady-state replacement view: no development (non-recurring) cost, financing,
+time value of money, insurance, launch failures, spectrum or licensing.
 
 | Quantity | Equation |
 |---|---|
-| First-unit cost | C₁ = c_bus · m_dry + c_payload · m_payload |
-| Learning curve (Wright) | average unit cost over N units = C₁ · N^(log₂ L), L = learning rate (e.g. 0.85–0.95) |
-| Launch cost per satellite | c_launch · m_wet |
-| Replacement rate | N / t_life (satellites per year) |
-| **Cost per year to sustain** | (C_avg + launch) · N / t_life + c_ops · N + C_ground |
-| Up-front deployment | N · (C_avg + launch) + C_ground |
-| Cost per unit of service | cost per year ÷ (km² imaged per year at required GSD) or ÷ (capacity) |
+| First-unit cost | C₁ = c_bus · (m_dry − m_payload) + c_payload · m_payload |
+| Learning curve (Wright) | average unit cost over N units = C₁ · (1/N) Σₖ k^(log₂ L) |
+| Learning rate L | 0.95 for N < 10, 0.90 for 10–50, 0.85 above 50 (the New SMAD's guidance by quantity) |
+| Launch per satellite | c_launch · m_wet |
+| Replacements per year | N / t_life (§10.4) |
+| **Cost per year to sustain** | (C_avg + launch) · N / t_life + c_ops · N + C_fixed |
+| Deployment | N · (C_avg + launch) |
 
-Steady-state replacement view: ignores financing and the time value of money; stated in the app.
+| Assumption (US$) | Low | High | Reasoning |
+|---|---|---|---|
+| c_bus, first unit, per kg of bus | 30k | 100k | Small-satellite buses span roughly tens of thousands of dollars per kg in production to well over 100k/kg for one-off government builds; the learning curve brings large constellations down further |
+| c_payload, first unit, per kg | 60k | 250k | Payloads cost more per kg than buses (optics, radar electronics, phased arrays) |
+| c_launch, per kg of wet mass | 6k | 30k | Low: published rideshare prices to sun-synchronous orbit (~$6k/kg, 2024–25). High: dedicated small launchers (~$20–40k/kg) |
+| c_ops, per satellite per year | 50k | 200k | Automated fleet operations at the low end; small fleets with dedicated staff at the high end |
+| C_fixed, per year | 1M | 5M | Ground stations, mission control and data handling for the whole constellation |
+
+**Cost per unit of service** (a cost to collect or serve, not a market price):
+- Imaging (optical, radar): dollars per km² actually imaged. Area imaged per year =
+  N × swath × ground speed × imaging duty × year (swaths in §9.1–9.2).
+- Phone service: dollars per cell per year; cells = area of the latitude band ÷ π (w/2)².
+- Other continuous coverage: dollars per km² of the band per year. A scaled payload on revisit coverage has
+  no defined swath, so no service metric is shown.
+
+The cost optimum can differ from the mass optimum: payload costs more per kg than bus, so missions whose
+payload grows fast with altitude (optical) are pulled lower by cost than by mass.
 
 ---
 
@@ -555,4 +607,7 @@ Steady-state replacement view: ignores financing and the time value of money; st
 | Sizing loop, Python vs TypeScript (11 design cases, 2 as-built) | within 10⁻⁵ (decay times 2 × 10⁻³) | v1 |
 | Hard floor vs loop gain, edge-on and sun-tracking | G < 0.85 closes, G > 1.05 does not | v1 |
 | Drag-free limit at 900 km | dry mass → drag-free reference within 0.2% | v1 |
+| Mission payloads, Python vs TypeScript (4 altitudes × 3 missions) | within 10⁻¹² | v1.5 |
+| SAR antenna at 500 km vs flown small X-band radars | 1.25 m² vs ≈ 1.3–8 m² | v1.5 (fact-checked) |
+| Cost: per-year total = sum of parts; hand check of the low case | exact | v1.5 (`cost.test.ts`) |
 | NASA DAS / STK lifetime comparisons | within ×2 | later, when data are gathered |

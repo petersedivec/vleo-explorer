@@ -41,3 +41,15 @@ export function wearLife(p: PropulsionPreset, withRange = true): string {
   const r = p.unitTotalImpulseRange_Ns
   return withRange && r ? `${base}; plausible band, scaled from public life tests, ${r[0].toLocaleString('en-US')}–${r[1].toLocaleString('en-US')} N·s` : base
 }
+
+/** US dollars to 2 significant figures with k/M/B, e.g. 1.23e7 → "$12M"; small values keep 2 figures. */
+export function money(x: number): string {
+  if (!Number.isFinite(x)) return '—'
+  const abs = Math.abs(x)
+  for (const [scale, suffix] of [[1e9, 'B'], [1e6, 'M'], [1e3, 'k']] as const)
+    if (abs >= scale * 0.9995) return `$${sig(x / scale, 2)}${suffix}`
+  return `$${sig(x, 2)}`
+}
+
+/** A low–high dollar band, e.g. "$12M–$48M". */
+export const moneyRange = ([lo, hi]: readonly [number, number]) => `${money(lo)}–${money(hi)}`

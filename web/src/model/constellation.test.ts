@@ -6,6 +6,7 @@ import {
   centralAngleFromOffNadir,
   DEFAULT_CONSTELLATION,
   evaluateConstellation,
+  nearOptimumBand,
   optimumAltitude,
   satellitesForContinuous,
   sweepConstellation,
@@ -74,8 +75,10 @@ describe('sustainment', () => {
   })
 
   it('payload scale is 1 at the reference altitude and fixed in as-built mode', () => {
-    expect(evaluateConstellation(DEFAULT_INPUTS, DEFAULT_CONSTELLATION, 300e3).payloadScale).toBe(1)
-    expect(evaluateConstellation({ ...DEFAULT_INPUTS, mode: 'asBuilt' }, DEFAULT_CONSTELLATION, 450e3).payloadScale).toBe(1)
+    const scaled = { ...DEFAULT_CONSTELLATION, mission: 'scaled' as const }
+    expect(evaluateConstellation(DEFAULT_INPUTS, scaled, 300e3).payloadScale).toBe(1)
+    expect(evaluateConstellation({ ...DEFAULT_INPUTS, mode: 'asBuilt' }, scaled, 450e3).payloadScale).toBe(1)
+    expect(evaluateConstellation({ ...DEFAULT_INPUTS, mode: 'asBuilt' }, DEFAULT_CONSTELLATION, 450e3).payload).toBeNull()
   })
 
   it('design mode sizes propellant to the design life at every altitude', () => {
@@ -85,5 +88,14 @@ describe('sustainment', () => {
       expect(p.life_s).toBe(DEFAULT_INPUTS.designLife_s)
       expect(p.propellant_kg).toBeCloseTo((p.satellite.drag_N * p.life_s) / (9.80665 * DEFAULT_INPUTS.isp_s), 9)
     }
+  })
+
+  it('the near-optimum band contains the optimum and only points within 10%', () => {
+    const pts = sweepConstellation(DEFAULT_INPUTS, DEFAULT_CONSTELLATION, altitudes)
+    const best = optimumAltitude(pts)!
+    const [lo, hi] = nearOptimumBand(pts)!
+    expect(lo).toBeLessThanOrEqual(best.altitude_m)
+    expect(hi).toBeGreaterThanOrEqual(best.altitude_m)
+    for (const p of pts) if (p.feasible && p.altitude_m === lo) expect(p.massPerYear_kg).toBeLessThanOrEqual(best.massPerYear_kg * 1.1)
   })
 })

@@ -309,6 +309,7 @@ class Spacecraft:
     payload_mass_kg: float = 20.0
     payload_power_W: float = 40.0
     payload_frontal_area_m2: float = 0.0
+    payload_drag_area_m2: float = 0.0  # extra ram-facing area outside the body (edge-on antenna)
     bus_fixed_mass_kg: float = 15.0
     bus_power_W: float = 30.0
     structure_fraction: float = 0.25
@@ -383,6 +384,8 @@ def size_design(sc: Spacecraft) -> dict:
     watts_per_newton = G0 * th.isp_s / (2 * th.efficiency * duty) if electric else 0.0  # §5.1 with T_fire = D/d
     gain = q * k_array * watts_per_newton * e_thr / p_area  # §7.1
 
+    a_payload = sc.payload_drag_area_m2
+
     def body_area(m: float) -> float:
         a = sc.body_frontal_area_m2 if sc.body_frontal_area_m2 is not None else sc.shape_factor * (m / sc.bulk_density_kg_m3) ** (2 / 3)
         return max(a, sc.payload_frontal_area_m2)
@@ -394,15 +397,15 @@ def size_design(sc: Spacecraft) -> dict:
             # P = c (A_body + k A_array), A_array = (L E_b + P E_t) / p  →  linear in A_array.
             if gain >= 1:
                 return None
-            a_arr = (base_load * e_base + q * watts_per_newton * a_body * e_thr) / (p_area * (1 - gain))
-            p_thr = q * watts_per_newton * (a_body + k_array * a_arr)
+            a_arr = (base_load * e_base + q * watts_per_newton * (a_body + a_payload) * e_thr) / (p_area * (1 - gain))
+            p_thr = q * watts_per_newton * (a_body + a_payload + k_array * a_arr)
             if p_thr < th.min_power_W:  # §5.7 minimum operating power
                 p_thr = th.min_power_W
                 a_arr = (base_load * e_base + p_thr * e_thr) / p_area
         else:
             p_thr = th.fixed_power_W
             a_arr = (base_load * e_base + p_thr * e_thr) / p_area
-        storm_drag = q * (a_body + k_array * a_arr)
+        storm_drag = q * (a_body + a_payload + k_array * a_arr)
         nominal_drag = storm_drag / sc.storm_margin
         units = max(1, math.ceil(storm_drag / duty / th.unit_thrust_N - 1e-9))
         if sc.wear and math.isfinite(th.unit_total_impulse_Ns) and math.isfinite(sc.design_life_s):
@@ -449,7 +452,7 @@ def size_design(sc: Spacecraft) -> dict:
 
     s = state(m_star)
     impulse_cap = s["units"] * th.unit_total_impulse_Ns if sc.wear else math.inf
-    drag_area = s["body_area_m2"] + k_array * s["array_area_m2"]
+    drag_area = s["body_area_m2"] + a_payload + k_array * s["array_area_m2"]
     life = _life(sc, m_star, drag_area, impulse_cap)
     return {
         **result, **life,
@@ -477,4 +480,80 @@ def evaluate_as_built(sc: Spacecraft, dry_mass_kg: float, drag_area_m2: float, m
             "mission_life_s": life["mission_life_s"] if margin >= 1 else 0.0}
 
 
-__all__ = ["Spacecraft", "Thruster", "size_design", "evaluate_as_built", "replace"]
+
+
+# ── Mission payloads (§9) ───────────────────────────────────────────────────────
+# Written from docs/physics.md §9. Parameters are teaching estimates; the TypeScript copy lives in
+# web/src/model/missions.ts (MISSION_PARAMS) and the golden vectors check the two agree.
+
+SPEED_OF_LIGHT = 299_792_458.0
+BOLTZMANN = 1.380649e-23
+
+
+def slant_range_from_incidence_m(altitude_m: float, incidence_deg: float) -> float:
+    c = math.cos(math.radians(incidence_deg))
+    return -R_EARTH * c + math.sqrt(R_EARTH**2 * c**2 + 2 * R_EARTH * altitude_m + altitude_m**2)
+
+
+def slant_range_from_elevation_m(altitude_m: float, elevation_deg: float) -> float:
+    e = math.radians(elevation_deg)
+    return math.sqrt(radius_m(altitude_m) ** 2 - (R_EARTH * math.cos(e)) ** 2) - R_EARTH * math.sin(e)
+
+
+def optical_payload(altitude_m: float, gsd_m: float, *, q=1.22, wavelength_m=550e-9, d_ref=0.5, m_ref=100.0,
+                    p_ref=100.0, k_mass=2.5, k_power=2.0, barrel_d=1.3, barrel_l=1.5) -> dict:
+    d = q * wavelength_m * altitude_m / gsd_m
+    return {"size": d, "mass_kg": m_ref * (d / d_ref) ** k_mass, "power_W": p_ref * (d / d_ref) ** k_power,
+            "frontal_area_m2": barrel_d * d * barrel_l * d, "drag_area_m2": 0.0, "imaging_swath_m": 12000 * gsd_m}
+
+
+SAR = dict(wavelength_m=SPEED_OF_LIGHT / 9.65e9, incidence_deg=30.0, margin=1.2, aspect=8.0, thickness_m=0.1,
+           areal_mass=15.0, electronics_kg=15.0, standby_W=20.0, duty=0.1, ref_imaging_W=1000.0,
+           ref_altitude_m=500e3, ref_nesz_dB=-17.0)
+
+
+def sar_min_area_m2(altitude_m: float) -> float:
+    r = slant_range_from_incidence_m(altitude_m, SAR["incidence_deg"])
+    return 4 * circular_speed_m_s(altitude_m) * SAR["wavelength_m"] * r * math.tan(math.radians(SAR["incidence_deg"])) / SPEED_OF_LIGHT
+
+
+def sar_payload(altitude_m: float, nesz_dB: float) -> dict:
+    p = SAR
+    r = slant_range_from_incidence_m(altitude_m, p["incidence_deg"])
+    r_ref = slant_range_from_incidence_m(p["ref_altitude_m"], p["incidence_deg"])
+    v, v_ref = circular_speed_m_s(altitude_m), circular_speed_m_s(p["ref_altitude_m"])
+    area = p["margin"] * sar_min_area_m2(altitude_m)
+    area_ref = p["margin"] * sar_min_area_m2(p["ref_altitude_m"])
+    imaging = p["ref_imaging_W"] * (r / r_ref) ** 3 * (v / v_ref) * (area_ref / area) ** 2 * 10 ** ((p["ref_nesz_dB"] - nesz_dB) / 10)
+    height = math.sqrt(area / p["aspect"])
+    return {"size": area, "mass_kg": p["electronics_kg"] + p["areal_mass"] * area,
+            "power_W": p["standby_W"] + p["duty"] * imaging, "frontal_area_m2": 0.0,
+            "drag_area_m2": height * p["thickness_m"] + K_GRAZE * area,
+            "imaging_swath_m": p["wavelength_m"] * r / (height * math.cos(math.radians(p["incidence_deg"])))}
+
+
+D2D = dict(frequency_Hz=2e9, eirp_dBW=-7.0, cn0_dBHz=50.0, t_sys_K=500.0, other_dB=3.0, eta=0.6,
+           areal_mass=10.0, electronics_kg=20.0, ref_power_W=100.0, ref_altitude_m=300e3, ref_elevation_deg=25.0,
+           thickness_m=0.1)
+
+
+def footprint_cap(altitude_m: float, elevation_deg: float) -> float:
+    """1 − cos λ for the footprint above elevation ε (§10.1); proportional to footprint area."""
+    e = math.radians(elevation_deg)
+    lam = math.acos(R_EARTH * math.cos(e) / radius_m(altitude_m)) - e
+    return 1 - math.cos(lam)
+
+
+def d2d_payload(altitude_m: float, cell_width_m: float, min_elevation_deg: float) -> dict:
+    p = D2D
+    lam = SPEED_OF_LIGHT / p["frequency_Hz"]
+    d = slant_range_from_elevation_m(altitude_m, min_elevation_deg)
+    l_fs = 20 * math.log10(4 * math.pi * d / lam)
+    g_dB = p["cn0_dBHz"] - p["eirp_dBW"] + l_fs + p["other_dB"] + 10 * math.log10(p["t_sys_K"]) + 10 * math.log10(BOLTZMANN)
+    link_area = 10 ** (g_dB / 10) * lam**2 / (4 * math.pi * p["eta"])
+    beam_area = (lam * d / cell_width_m) ** 2
+    area = max(link_area, beam_area)
+    power = p["ref_power_W"] * footprint_cap(altitude_m, min_elevation_deg) / footprint_cap(p["ref_altitude_m"], p["ref_elevation_deg"])
+    return {"size": area, "mass_kg": p["electronics_kg"] + p["areal_mass"] * area, "power_W": power,
+            "frontal_area_m2": 0.0, "drag_area_m2": math.sqrt(area) * p["thickness_m"] + K_GRAZE * area,
+            "beam_limited": beam_area >= link_area}

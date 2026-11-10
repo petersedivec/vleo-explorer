@@ -75,7 +75,7 @@ const FLOW: { tab: TabId; title: string; text: string }[] = [
   {
     tab: 'constellation',
     title: 'Constellation',
-    text: 'Many copies of that satellite: how many are needed for revisit or continuous coverage, how often they must be replaced, and the best altitude.',
+    text: 'Many copies of that satellite for a mission — optical imaging, radar or phone service — with the payload sized to the requirement: how many are needed, how often they must be replaced, what it costs per year, and the best altitude.',
   },
 ]
 
@@ -113,8 +113,9 @@ const ASSUMPTIONS: { area: string; items: string[] }[] = [
     area: 'Constellation',
     items: [
       'Satellite counts are analytic: revisit from the sensor’s field of regard with evenly spread passes; continuous coverage from ideal hexagonal packing (a lower bound).',
-      'To keep the same performance on the ground, payload mass and power grow as (altitude ÷ 300 km)^k.',
-      'Mass to orbit per year is a steady-state replacement figure; it excludes launch adapters and dispensers. There is no cost model yet.',
+      'Payloads are sized from a mission requirement at each altitude: a diffraction-limited telescope for a ground resolution, a side-looking radar antenna at its ambiguity limit with power set by sensitivity, or a phone-link antenna set by cell size and uplink. These are first-order teaching models with estimated reference values; a simpler (altitude ÷ 300 km)^k scaling is still available.',
+      'Mass to orbit per year is a steady-state replacement figure; it excludes launch adapters and dispensers.',
+      'Cost is a teaching estimate shown as a low–high band (build with a learning curve, launch, operations); it excludes development cost, financing, insurance and launch failures. Cost per unit of service is a cost to collect or serve, not a market price.',
     ],
   },
   {
@@ -126,9 +127,7 @@ const ASSUMPTIONS: { area: string; items: string[] }[] = [
 ]
 
 const NEXT_STEPS = [
-  'Size payloads from real requirements: imaging resolution, radar sensitivity, direct-to-device link margin.',
   'Coverage simulator and 2D revisit map to check the analytic satellite counts; ground stations and downlink.',
-  'A cost model: satellites, launch, replacement and operations, giving cost per year and cost per unit of service.',
   'Time-varying solar cycle: pick a launch year and fly through the cycle.',
   'Orbit-type choice (dawn-dusk or noon sun-synchronous, or other) that sets the sun angle and eclipse automatically.',
   'Uncertainty bands (Monte Carlo) on life, satellite count and mass.',
